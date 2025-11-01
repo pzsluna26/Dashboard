@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useEffect, type RefObject } from "react";
+import { useMemo, useState, type RefObject } from "react";
 import { usePathname } from "next/navigation";
 
 // 📅 DayPicker
@@ -30,29 +30,17 @@ const BTN_SHADOW_ACTIVE = "0 6px 14px rgba(60,85,100,0.32), 0 2px 6px rgba(60,85
 
 const MAX_RANGE_DAYS = 30;
 
-// ✅ 2025-01-01 ~ 2025-10-31로 범위 고정
-const MIN_DATE = new Date(2025, 0, 1);  // 2025-01-01
-const MAX_DATE = new Date(2025, 9, 31); // 2025-10-31
-
-// ✅ 라우트 버튼
+// ✅ 라우트 버튼 5개 추가
 const routes = [
   { label: "홈화면", href: "/", icon: HomeIcon },
-  // { label: "종합분석", href: "/", icon: DashboardIcon },
-  // { label: "뉴스분석", href: "/news", icon: NewsIcon },
-  // { label: "여론분석", href: "/social", icon: SentimentIcon },
-  // { label: "법안분석", href: "/law", icon: LawIcon },
+//   { label: "종합분석", href: "/", icon: DashboardIcon },
+//   { label: "뉴스분석", href: "/news", icon: NewsIcon },
+//   { label: "여론분석", href: "/social", icon: SentimentIcon },
+//   { label: "법안분석", href: "/law", icon: LawIcon },
 ];
 
 function toYMD(d: Date) {
   return format(d, "yyyy-MM-dd");
-}
-
-// 범위 밖 날짜 클램프
-function clampDate(d?: Date) {
-  if (!d) return undefined;
-  if (d < MIN_DATE) return MIN_DATE;
-  if (d > MAX_DATE) return MAX_DATE;
-  return d;
 }
 
 export default function Remote({
@@ -65,10 +53,10 @@ export default function Remote({
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  // DayPicker range 상태 (초기값을 2025-01~10 범위로 클램프)
+  // DayPicker range 상태
   const [range, setRange] = useState<{ from?: Date; to?: Date }>(() => ({
-    from: clampDate(startDate ? new Date(startDate) : undefined),
-    to: clampDate(endDate ? new Date(endDate) : undefined),
+    from: startDate ? new Date(startDate) : undefined,
+    to: endDate ? new Date(endDate) : undefined,
   }));
 
   const daySpan = useMemo(() => {
@@ -91,10 +79,6 @@ export default function Remote({
     const { from, to } = selected;
     if (!from) return setRange({});
     if (!to) return setRange({ from });
-
-    // 만약 외부에서 강제로 범위 밖이 들어오면 무시 (안전망)
-    if (from < MIN_DATE || to > MAX_DATE) return;
-
     const span = differenceInCalendarDays(to, from) + 1;
     if (span > MAX_RANGE_DAYS) return;
     setRange({ from, to });
@@ -107,14 +91,6 @@ export default function Remote({
   };
 
   const handleReset = () => setRange({});
-
-  // ESC로 닫기
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
 
   // -------- 캡처/다운로드 유틸 --------
   async function captureNodeToCanvas(target: HTMLElement) {
@@ -176,7 +152,7 @@ export default function Remote({
   return (
     <div
       className={[
-        "fixed left-6 top-1/2 -translate-y-1/2 z-[1000] pointer-events-auto",
+        "fixed left-6 top-1/2 -translate-y-1/2 z-[1000] pointer-events-auto", // 🔝 보이도록 z-Index/포인터 보장
         "rounded-3xl shadow-[0_12px_40px_rgba(20,30,60,0.15)]",
         "backdrop-blur-md border border-white/50",
         "bg-[rgba(255,255,255,0.60)]",
@@ -365,24 +341,13 @@ export default function Remote({
       {open && (
         <div
           id="remote-date-panel"
-          className="absolute left-[76px] top-1/2 -translate-y-1/2 w-[350px] p-4 rounded-2xl
+          className="absolute left-[76px] top-1/2 -translate-y-1/2 w-[320px] p-4 rounded-2xl
                      bg-[rgba(255,255,255,0.90)] backdrop-blur-md shadow-[0_12px_40px_rgba(20,30,60,0.2)]
-                     border border-[rgba(255,255,255,0.60)] overflow-hidden"
+                     border border-[rgba(255,255,255,0.60)]"
         >
-          {/* 닫기 버튼 */}
-          <button
-            type="button"
-            aria-label="닫기"
-            onClick={() => setOpen(false)}
-            className="absolute right-3 top-3 h-8 w-8 rounded-full grid place-items-center text-neutral-600 hover:bg-white/70 hover:text-neutral-800"
-            title="닫기"
-          >
-            ×
-          </button>
-
           <p className="text-sm font-medium text-neutral-700 mb-3">조회기간 (최대 {MAX_RANGE_DAYS}일)</p>
 
-          <div className="rounded-xl border border-neutral-200 bg-white p-2 overflow-hidden">
+          <div className="rounded-xl border border-neutral-200 bg-white p-2">
             <DayPicker
               mode="range"
               selected={range}
@@ -390,15 +355,6 @@ export default function Remote({
               showOutsideDays
               numberOfMonths={1}
               disabled={disabledMatchers}
-
-              // ▼ 연/월 선택 드롭다운 (2025년 고정)
-              captionLayout="dropdown"
-              fromYear={2025}
-              toYear={2025}
-              fromMonth={new Date(2025, 0)} // 2025-01
-              toMonth={new Date(2025, 9)}   // 2025-10
-
-              // 강조 스타일(상태 클래스)
               modifiersClassNames={{
                 selected: "bg-[#7fa2b2] text-white",
                 range_start: "bg-[#7fa2b2] text-white",
@@ -406,23 +362,10 @@ export default function Remote({
                 range_middle: "bg-[#b4c4cb] text-white",
                 today: "border border-[#7fa2b2]",
               }}
-
-              // 오버플로우 방지 + 캡션/셀 스타일
               styles={{
-                root: {
-                  width: "100%",
-                  maxWidth: "100%",
-                  boxSizing: "border-box",
-                  ["--rdp-cell-size" as any]: "34px", // 셀 크기 축소
-                },
-                months: { width: "100%", margin: 0 },
-                month: { width: "100%" },
-                table: { width: "100%", borderCollapse: "collapse" },
-                caption: { color: "#1f2937", padding: "4px 6px" },
-                head_cell: { color: "#6b7280", fontWeight: 600, padding: "4px 0" },
-                day: { color: "#1f2937", padding: 0 },
-                caption_label: { fontWeight: 600 },
-                nav: { margin: 0 },
+                caption: { color: "#1f2937" },
+                head_cell: { color: "#6b7280", fontWeight: 600 },
+                day: { color: "#1f2937" },
               }}
             />
           </div>

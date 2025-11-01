@@ -13,9 +13,6 @@ export interface LegalArticleTop5Props {
   onClickDetail?: (legal: string) => void; // 상세보기 라우팅 핸들러
 }
 
-/* -------------------- 디버그 플래그 -------------------- */
-const DEBUG = true;
-
 /* -------------------- 유틸 -------------------- */
 function parseDate(d: string) {
   const [y, m, dd] = d.split("-").map(Number);
@@ -43,27 +40,9 @@ export default function LegalArticleTop5({
   domains,
   onClickDetail,
 }: LegalArticleTop5Props) {
-
   const items = useMemo(() => {
-    /** 디버그 카운터 */
-    const debugCounters = {
-      addsCheckedDays: 0,
-      addsUsedDays: 0,
-      newsCheckedDays: 0,
-      newsUsedDays: 0,
-      addsSubItems: 0,
-      newsSubItems: 0,
-    };
-
-    const t0 = performance.now();
-
-    if (!data) {
-      if (DEBUG && process.env.NODE_ENV !== "production") {
-        console.warn("[LegalArticleTop5] data가 비어있습니다.");
-      }
-      return [] as any[];
-    }
-
+    
+    if (!data) return [] as any[];
     const pickDomains: DomainKey[] =
       domains && domains.length ? (domains as DomainKey[]) : ["privacy", "child", "safety", "finance"];
 
@@ -80,19 +59,12 @@ export default function LegalArticleTop5({
     // 1) addsocial.daily_timeline → 댓글/입장/사건 집계
     for (const dom of pickDomains) {
       const dl = data?.[dom]?.addsocial?.["daily_timeline"] || {};
-      const dayEntries = Object.entries<any>(dl);
-      debugCounters.addsCheckedDays += dayEntries.length;
-
-      for (const [dateKey, entry] of dayEntries) {
+      for (const [dateKey, entry] of Object.entries<any>(dl)) {
         if (!inRange(dateKey, startDate, endDate)) continue;
-        debugCounters.addsUsedDays++;
-
         const mids = entry?.중분류목록 || {};
         for (const [mid, midBucket] of Object.entries<any>(mids)) {
           const subs = (midBucket as any)?.소분류목록 || {};
           for (const [subKey, sub] of Object.entries<any>(subs)) {
-            debugCounters.addsSubItems++;
-
             const law = sub?.관련법 || "(관련법 미상)";
             const counts = sub?.counts || { 찬성: 0, 반대: 0 };
             const agreeBlock = sub?.찬성 || { "개정강화": { count: 0 }, "폐지약화": { count: 0 } };
@@ -121,19 +93,12 @@ export default function LegalArticleTop5({
     // 2) news.daily_timeline → 관련 뉴스 수 집계
     for (const dom of pickDomains) {
       const dl = data?.[dom]?.news?.["daily_timeline"] || {};
-      const dayEntries = Object.entries<any>(dl);
-      debugCounters.newsCheckedDays += dayEntries.length;
-
-      for (const [dateKey, entry] of dayEntries) {
+      for (const [dateKey, entry] of Object.entries<any>(dl)) {
         if (!inRange(dateKey, startDate, endDate)) continue;
-        debugCounters.newsUsedDays++;
-
         const mids = entry?.중분류목록 || {};
         for (const [, midBucket] of Object.entries<any>(mids)) {
           const subs = (midBucket as any)?.소분류목록 || {};
           for (const [, sub] of Object.entries<any>(subs)) {
-            debugCounters.newsSubItems++;
-
             const law = sub?.관련법 || "(관련법 미상)";
             const n = Array.isArray(sub?.articles) ? sub.articles.length : 0;
             if (!agg.has(law)) {
@@ -146,7 +111,7 @@ export default function LegalArticleTop5({
     }
 
     // 3) total desc → TOP5
-    const result = Array.from(agg.values())
+    return Array.from(agg.values())
       .sort((a, b) => b.total - a.total)
       .slice(0, 5)
       .map((a, i) => ({
@@ -157,75 +122,19 @@ export default function LegalArticleTop5({
         newsCount: a.newsCount,
         incidentCount: Object.keys(a.incidents).length,
       }));
-
-    const t1 = performance.now();
-
-    if (DEBUG && process.env.NODE_ENV !== "production") {
-      console.groupCollapsed(
-        `%c[LegalArticleTop5] 계산완료: TOP=${result.length}, 기간=${startDate ?? "-"}~${endDate ?? "-"}`,
-        "color:#2563eb;font-weight:600;"
-      );
-      console.log("입력 domains:", pickDomains);
-      console.log("디버그 카운터:", debugCounters);
-      console.log("고유 법조항 수(agg.size):", agg.size);
-      console.table(
-        result.map(x => ({
-          rank: x.rank,
-          law: x.law,
-          total: x.total,
-          강화: x.stance.강화,
-          완화: x.stance.완화,
-          반대: x.stance.반대,
-          newsCount: x.newsCount,
-          incidentCount: x.incidentCount,
-        }))
-      );
-      console.log(`소요시간: ${(t1 - t0).toFixed(1)}ms`);
-      console.groupEnd();
-
-      // 전역에서 즉시 확인하고 싶을 때
-      if (typeof window !== "undefined") {
-        (window as any).__R2_TOP5_DEBUG__ = {
-          params: { startDate, endDate, pickDomains },
-          counters: debugCounters,
-          aggSize: agg.size,
-          items: result,
-        };
-      }
-    }
-
-    return result;
   }, [data, startDate, endDate, domains]);
 
-  /* 총합 콘솔 */
   const totalAll = items.reduce((s, x) => s + x.total, 0);
-  if (DEBUG && process.env.NODE_ENV !== "production") {
-    console.log("[LegalArticleTop5] items.length=", items.length, "totalAll=", totalAll);
-  }
 
   /* ---------- 스포트라이트(순차 강조) ---------- */
   const [active, setActive] = useState(0);
   useEffect(() => {
     if (!items.length) return;
     setActive(0); // 처음엔 1위
-    if (DEBUG && process.env.NODE_ENV !== "production") {
-      console.log("[LegalArticleTop5] 스포트라이트 시작, interval=3000ms, items.length=", items.length);
-    }
     const id = setInterval(() => {
-      setActive((prev) => {
-        const next = (prev + 1) % items.length;
-        if (DEBUG && process.env.NODE_ENV !== "production") {
-          console.log(`[LegalArticleTop5] active 변경: ${prev} → ${next}`);
-        }
-        return next;
-      });
+      setActive((prev) => (prev + 1) % items.length);
     }, 3000); // 3초 간격
-    return () => {
-      clearInterval(id);
-      if (DEBUG && process.env.NODE_ENV !== "production") {
-        console.log("[LegalArticleTop5] 스포트라이트 정리(cleanup)");
-      }
-    };
+    return () => clearInterval(id);
   }, [items.length]);
 
   if (!items.length) {
@@ -241,9 +150,7 @@ export default function LegalArticleTop5({
     <div className="h-full rounded-2xl border border-white/60 bg-white/60 backdrop-blur-md p-4 shadow-sm">
       {/* 헤더 */}
       <div className="flex items-baseline justify-between">
-        <div className="text-lg font-semibold text-neutral-900">
-          입법수요 TOP {Math.min(5, items.length)}
-        </div>
+        <div className="text-lg font-semibold text-neutral-900">입법수요 TOP 3</div>
         <div className="text-xs text-neutral-500">총 {totalAll.toLocaleString()}개 댓글</div>
       </div>
 
@@ -257,15 +164,9 @@ export default function LegalArticleTop5({
 
           const isActive = idx === active;
 
-          if (DEBUG && process.env.NODE_ENV !== "production") {
-            console.debug(
-              `[LegalArticleTop5] render item #${idx + 1} ${it.law} | total=${it.total} | 분포 ${p1}/${p2}/${p3} | active=${isActive}`
-            );
-          }
-
           return (
             <li
-              key={`${it.law}-${idx}`}
+              key={it.law}
               className={[
                 "relative rounded-2xl border/60 p-3 transition-all",
                 "bg-white/80",
@@ -277,12 +178,7 @@ export default function LegalArticleTop5({
                 filter: isActive ? undefined : "grayscale(1) blur(1px)",
                 transitionDuration: "400ms",
               }}
-              onClick={() => {
-                if (DEBUG && process.env.NODE_ENV !== "production") {
-                  console.log("[LegalArticleTop5] click item:", it.law);
-                }
-                onClickDetail?.(it.law);
-              }}
+              onClick={() => onClickDetail?.(it.law)}
             >
               {/* 상단 라인: 랭킹·라벨·HOT/상세 버튼·값 */}
               <div className="flex items-center gap-3">
@@ -304,7 +200,8 @@ export default function LegalArticleTop5({
                   <span
                     className="select-none rounded-full px-2 py-1 text-[11px] font-bold text-white shadow-sm"
                     style={{
-                      background: "linear-gradient(180deg, #ff7a3d 0%, #ff4d4f 100%)",
+                      background:
+                        "linear-gradient(180deg, #ff7a3d 0%, #ff4d4f 100%)",
                       boxShadow: "0 4px 12px rgba(255,80,60,.25)",
                     }}
                   >
@@ -321,9 +218,6 @@ export default function LegalArticleTop5({
                     className="rounded-full bg-blue-500/50 px-3 py-1 text-xs font-semibold text-white shadow hover:bg-blue-600 transition-colors"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (DEBUG && process.env.NODE_ENV !== "production") {
-                        console.log("[LegalArticleTop5] 상세 버튼 클릭:", it.law);
-                      }
                       onClickDetail?.(it.law);
                     }}
                   >
@@ -368,7 +262,7 @@ export default function LegalArticleTop5({
                   />
                 </div>
 
-                {/* 범례/숫자 */}
+                {/* 범례/숫자 (선택) */}
                 <div className="mt-1 flex items-center justify-between text-[11px] text-neutral-500">
                   <span className="tabular-nums">
                     강화 {p1}% · 완화 {p2}% · 반대 {p3}%

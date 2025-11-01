@@ -2,7 +2,9 @@
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 
+import KpiSummary from "@/features/total/components/KpiSummary";
 import { transformRawData } from "@/features/news/components/transformRawData";
+import { computeKpis } from "@/shared/utils/computeKpis";
 import type { PeriodKey } from "@/shared/types/common";
 
 import Remote from "@/shared/layout/Remote";
@@ -10,7 +12,6 @@ import BackgroundGradient from "@/shared/layout/BackgroundGradient";
 import Nav from "@/shared/layout/Nav";
 import LegalTop5 from "@/features/total/components/LegalTop5";
 import SocialBarChart from "@/features/total/components/SocailBarChart";
-import KpiSummary from "@/features/total/components/KpiSummary";
 
 /** 클라이언트 전용(차트/캔버스/현재시간 의존) 컴포넌트는 동적 임포트 + ssr:false */
 const NetworkGraph = dynamic(
@@ -28,7 +29,17 @@ const Heatmap = dynamic(
   { ssr: false, loading: () => <div className="h-[310px] grid place-items-center text-neutral-400">Loading…</div> }
 );
 
-/** 공통 카드 */
+/** 카드 래퍼 */
+function LegislativeRanking({ periodLabel }: { periodLabel: string }) {
+  return (
+    <div className="h-full rounded-2xl bg-white/55 backdrop-blur-md border border-white/60 p-4">
+      <div className="text-sm text-neutral-500 font-medium">입법수요 랭킹</div>
+      <div className="mt-2 text-sm text-neutral-700">기간: {periodLabel}</div>
+    </div>
+  );
+}
+
+/** 공통 카드: 기본 높이 유지, 개별 카드에서 bodyClass로 오버라이드 가능 */
 function ChartCard({
   title,
   children,
@@ -59,6 +70,7 @@ export default function Dashboard() {
 
   const [data, setData] = useState<any>(null);
   const [trend, setTrend] = useState<any>(null);
+  const [kpis, setKpis] = useState<any>(null);
 
   // ✅ Remote(좌측 리모컨)에서 제어되는 조회기간
   const [startDate, setStartDate] = useState<string>("");
@@ -71,40 +83,23 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function fetchData() {
-      try {
-        console.groupCollapsed("[page] fetchData() 호출");
-        console.log("요청 기간(입력):", { startDate, endDate, period });
+      const res = await fetch("/data/data.json", { cache: "no-store" });
+      const all = await res.json();
+      setData(all);
 
-        const res = await fetch("/data/data.json", { cache: "no-store" });
-        if (!res.ok) {
-          console.error("[page] /data/data.json 응답 오류", res.status, res.statusText);
-        }
-        const all = await res.json();
-        setData(all);
+      // ✅ 기간 필터를 transform/compute에 전달
+      const transformed = transformRawData(all, period, { startDate, endDate });
+      setTrend(transformed);
 
-        // 데이터 보유 범위 로그
-        const daily = all?.privacy?.news?.daily_timeline || {};
-        const keys = Object.keys(daily).sort();
-        console.log("데이터 보유 범위(daily):", { first: keys[0], last: keys.at(-1), totalDays: keys.length });
-
-        // transformRawData 호출 로그
-        const transformed = transformRawData(all, period, { startDate, endDate });
-        setTrend(transformed);
-        console.log("transformRawData 완료");
-
-        console.groupEnd();
-      } catch (e) {
-        console.error("[page] fetchData() 예외", e);
-      }
+      const nextKpis = computeKpis(all, period, { startDate, endDate });
+      setKpis(nextKpis);
     }
     fetchData();
-    console.groupCollapsed("[page] useEffect deps 변경");
-    console.log("변경된 deps:", { startDate, endDate, period });
-    console.groupEnd();
+      console.log("사용자 지정 날짜로 업데이트", { startDate, endDate });
+
   }, [period, startDate, endDate]);
 
-  if (!data || !trend) {
-    console.warn("[page] 초기 로딩 중…", { hasData: !!data, hasTrend: !!trend });
+  if (!data || !trend || !kpis) {
     return (
       <div className="w-full h-screen grid place-items-center bg-[#C8D4E5] text-neutral-700">
         Loading...
@@ -127,13 +122,12 @@ export default function Dashboard() {
         startDate={startDate}
         endDate={endDate}
         onDateRangeChange={(s, e) => {
-          console.groupCollapsed("[page] onDateRangeChange");
-          console.log({ s, e });
-          console.groupEnd();
+          console.log("사용자 지정기간", { s, e });
           setStartDate(s);
           setEndDate(e);
         }}
       />
+
 
       <div className="flex w-full mx-auto mt-5">
         <aside className="w-[140px] flex flex-col items-center py-6" />
@@ -154,26 +148,27 @@ export default function Dashboard() {
 
           <div className="flex flex-col space-y-8">
             {/* ─────────────────────────────────────────────
-               1단: 종합 지표 (누적 KPI · 4카드)
+               1단: KPI (전체 폭)
             ───────────────────────────────────────────── */}
             <section className="bg-white/35 backdrop-blur-md rounded-3xl p-4 border border-white/50">
               <KpiSummary
-                key={`${startDate}-${endDate}-${period}`}
-                data={data}
+                kpis={kpis}
+                periodLabel={displayPeriod}
                 startDate={startDate}
                 endDate={endDate}
-                period={period}
               />
             </section>
 
             {/* ─────────────────────────────────────────────
-               2단 */}
+               2단: 좌 1/3 입법수요 랭킹 · 우 2/3 네트워크 그래프
+            ───────────────────────────────────────────── */}
             <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-1">
                 <LegalTop5
                   data={data}
                   startDate={startDate}
                   endDate={endDate}
+                  // domains={["privacy","child","safety","finance"]}
                   onClickDetail={(law) => {
                     const slug = encodeURIComponent(law);
                     window.location.href = `/legal/${slug}`;
@@ -193,19 +188,22 @@ export default function Dashboard() {
             </section>
 
             {/* ─────────────────────────────────────────────
-               3단 */}
+               3단: 좌 1/2 막대(SocialBarChart-확장 높이) · 우 1/2 (상) 스택/파이 · (하) 히트맵
+            ───────────────────────────────────────────── */}
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* 좌측: 법안별 여론 성향 (막대) - 이 카드만 넓은 높이 적용 */}
               <ChartCard title="법안별 여론 성향 (막대)" bodyClass="min-h-[420px] lg:min-h-[680px]">
                 <div className="w-full h-full">
                   <SocialBarChart
                     data={data}
-                    period={period}
-                    startDate={startDate}
+                    period={period}          // 'daily_timeline' | 'weekly_timeline' | 'monthly_timeline'
+                    startDate={startDate}    // Remote에서 선택된 범위 그대로 전달
                     endDate={endDate}
                   />
                 </div>
               </ChartCard>
 
+              {/* 우측: 상/하 1:1 그리드 → (상) 여론 성향 분포, (하) 분야별 히트맵 (기본 높이 유지) */}
               <div className="grid grid-rows-2 gap-6 h-full w-full">
                 <ChartCard title="여론 성향 추이 (스택)">
                   <div className="w-full h-full">
@@ -221,8 +219,8 @@ export default function Dashboard() {
                   <div className="w-full h-full">
                     <Heatmap
                       data={data}
-                      period={period}
-                      startDate={startDate}
+                      period={period}          // 'daily_timeline' | 'weekly_timeline' | 'monthly_timeline'
+                      startDate={startDate}    // Remote에서 선택된 날짜 범위(일 단위일 때 필터)
                       endDate={endDate}
                     />
                   </div>
