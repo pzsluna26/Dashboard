@@ -8,103 +8,149 @@ export interface Props {
   data: any;             // /data/data.json 전체 원본
   startDate?: string;    // YYYY-MM-DD
   endDate?: string;      // YYYY-MM-DD
-  period?: string;       // "weekly_timeline"만 사용됨
+  period?: string;       // (미사용) 주간 기본
 }
 
 // 지정 색상
 const COLORS = {
-  disagree: "#FFCDB2", // 반대
-  repeal: "#ACE1AF",  // 폐지완화
-  agree: "#C7D9DD",   // 개정강화
+  disagree: "#FFCDB2", // 반대(현상유지)
+  repeal: "#ACE1AF",   // 폐지완화(=폐지약화)
+  agree: "#C7D9DD",    // 개정강화
 };
 
-// "2025-W30" → 실제 시작일
+// 안전한 숫자 변환
+const num = (v: any) => Number.isFinite(Number(v)) ? Number(v) : 0;
+
+// "2025-W30" → 실제 시작일(월요일)
 function weekKeyToDate(key: string): Date | null {
-  const match = key.match(/^(\d{4})-W(\d{1,2})$/);
-  if (!match) return null;
-  const [_, year, week] = match;
-  const jan4 = new Date(Number(year), 0, 4); // 첫 주 기준
+  const m = key.match(/^(\d{4})-W(\d{1,2})$/);
+  if (!m) return null;
+  const [, y, w] = m;
+  const jan4 = new Date(Number(y), 0, 4);
   const start = new Date(jan4);
   const day = jan4.getDay() || 7;
-  start.setDate(jan4.getDate() - day + 1 + (Number(week) - 1) * 7);
+  start.setDate(jan4.getDate() - day + 1 + (Number(w) - 1) * 7);
+  start.setHours(0, 0, 0, 0);
   return start;
 }
 
-// 포맷 라벨 (ex: 25년 W30)
-function formatWeekLabel(weekKey: string) {
+function fmtDateLabel(ymd: string) {
+  // "YYYY-MM-DD" → "MM-DD"
+  return ymd.slice(5).replace("-", "-");
+}
+
+function fmtWeekLabel(weekKey: string) {
   const [year, wk] = weekKey.split("-W");
   return `${year.slice(2)}년 W${Number(wk)}`;
 }
 
-function buildFilteredWeeks(data: any, startDate?: string, endDate?: string) {
+type SeriesPoint = Highcharts.PointOptionsObject & {
+  custom?: { count: number; total: number; key: string };
+};
+
+function buildSeries(data: any, startDate?: string, endDate?: string) {
   const domains = Object.keys(data || {});
-  const agg: Record<string, { agree: number; repeal: number; disagree: number; total: number }> = {};
+  const useDailySlice = Boolean(startDate && endDate);
+
+  // 공통 집계 구조
+  type Agg = { agree: number; repeal: number; disagree: number; total: number };
+  const agg: Record<string, Agg> = {}; // key: 날짜(YYYY-MM-DD) 또는 주차(YYYY-Wxx)
 
   for (const dom of domains) {
-    const timeline = data[dom]?.addsocial?.["weekly_timeline"] || {};
-    for (const key of Object.keys(timeline)) {
-      const weekStart = weekKeyToDate(key);
-      if (!weekStart) continue;
+    const root = data[dom]?.addsocial ?? {};
+    if (useDailySlice) {
+      // ✅ 기간이 지정되면 항상 daily_timeline만 사용
+      const tl = root["daily_timeline"] || {};
+      for (const k of Object.keys(tl)) {
+        if (!(k >= (startDate as string) && k <= (endDate as string))) continue; // 문자열 비교(YYYY-MM-DD)
+        const mids = tl[k]?.["중분류목록"] ?? {};
+        let agree = 0, repeal = 0, disagree = 0;
+        for (const mid of Object.keys(mids)) {
+          const subs = mids[mid]?.["소분류목록"] ?? {};
+          for (const subKey of Object.keys(subs)) {
+            const sub = subs[subKey] ?? {};
+            const gaejeong = num(sub?.["찬성"]?.["개정강화"]?.count);
+            const paejiYakhwa = num(sub?.["찬성"]?.["폐지약화"]?.count);
+            const paejiWanhwa = num(sub?.["찬성"]?.["폐지완화"]?.count);
+            const paeji = paejiYakhwa || paejiWanhwa;
 
-      if (
-        startDate &&
-        endDate &&
-        (weekStart < new Date(startDate) || weekStart > new Date(endDate))
-      ) {
-        continue;
-      }
+            const bandae =
+              num(sub?.counts?.["반대"]) ||
+              (Array.isArray(sub?.["반대"]?.["소셜목록"]) ? sub["반대"]["소셜목록"].length : 0);
 
-      const mids = timeline[key]?.["중분류목록"] ?? {};
-      let agree = 0,
-        repeal = 0,
-        disagree = 0;
-      for (const mid of Object.keys(mids)) {
-        const subs = mids[mid]?.["소분류목록"] ?? {};
-        for (const subKey of Object.keys(subs)) {
-          const sub = subs[subKey];
-          agree += sub?.["찬성"]?.["개정강화"]?.count ?? 0;
-          repeal += sub?.["찬성"]?.["폐지약화"]?.count ?? 0;
-          disagree += sub?.["반대"]?.count ?? 0;
+            agree += gaejeong;
+            repeal += paeji;
+            disagree += bandae;
+          }
         }
+        if (!agg[k]) agg[k] = { agree: 0, repeal: 0, disagree: 0, total: 0 };
+        agg[k].agree += agree;
+        agg[k].repeal += repeal;
+        agg[k].disagree += disagree;
+        agg[k].total += agree + repeal + disagree;
       }
+    } else {
+      // ⛳ 기간이 없으면 기존처럼 주간 집계
+      const tl = root["weekly_timeline"] || {};
+      for (const k of Object.keys(tl)) {
+        const mids = tl[k]?.["중분류목록"] ?? {};
+        let agree = 0, repeal = 0, disagree = 0;
+        for (const mid of Object.keys(mids)) {
+          const subs = mids[mid]?.["소분류목록"] ?? {};
+          for (const subKey of Object.keys(subs)) {
+            const sub = subs[subKey] ?? {};
+            const gaejeong = num(sub?.["찬성"]?.["개정강화"]?.count);
+            const paejiYakhwa = num(sub?.["찬성"]?.["폐지약화"]?.count);
+            const paejiWanhwa = num(sub?.["찬성"]?.["폐지완화"]?.count);
+            const paeji = paejiYakhwa || paejiWanhwa;
 
-      if (!agg[key]) agg[key] = { agree: 0, repeal: 0, disagree: 0, total: 0 };
-      agg[key].agree += agree;
-      agg[key].repeal += repeal;
-      agg[key].disagree += disagree;
-      agg[key].total += agree + repeal + disagree;
+            const bandae =
+              num(sub?.counts?.["반대"]) ||
+              (Array.isArray(sub?.["반대"]?.["소셜목록"]) ? sub["반대"]["소셜목록"].length : 0);
+
+            agree += gaejeong;
+            repeal += paeji;
+            disagree += bandae;
+          }
+        }
+        if (!agg[k]) agg[k] = { agree: 0, repeal: 0, disagree: 0, total: 0 };
+        agg[k].agree += agree;
+        agg[k].repeal += repeal;
+        agg[k].disagree += disagree;
+        agg[k].total += agree + repeal + disagree;
+      }
     }
   }
 
-  const weekKeys = Object.keys(agg).sort((a, b) => {
-    const aDate = weekKeyToDate(a) ?? new Date(0);
-    const bDate = weekKeyToDate(b) ?? new Date(0);
-    return aDate.getTime() - bDate.getTime();
+  // 정렬 및 카테고리/시리즈 만들기
+  const keys = Object.keys(agg).sort((a, b) => {
+    if (useDailySlice) {
+      return new Date(a).getTime() - new Date(b).getTime();
+    } else {
+      const ad = weekKeyToDate(a) ?? new Date(0);
+      const bd = weekKeyToDate(b) ?? new Date(0);
+      return ad.getTime() - bd.getTime();
+    }
   });
 
-  const categories = weekKeys.map((k) => formatWeekLabel(k));
-  const agreeSeries: Highcharts.PointOptionsObject[] = [];
-  const repealSeries: Highcharts.PointOptionsObject[] = [];
-  const disagreeSeries: Highcharts.PointOptionsObject[] = [];
+  const categories = keys.map(k => useDailySlice ? fmtDateLabel(k) : fmtWeekLabel(k));
 
-  for (const wk of weekKeys) {
-    const item = agg[wk];
-    const tot = Math.max(item.total, 1);
-    agreeSeries.push({
-      y: (item.agree / tot) * 100,
-      custom: { count: item.agree, total: item.total, weekKey: wk },
+  const make = (sel: (x: Agg) => number): SeriesPoint[] =>
+    keys.map(k => {
+      const item = agg[k];
+      const tot = Math.max(item.total, 1);
+      return {
+        y: (sel(item) / tot) * 100,
+        custom: { count: sel(item), total: item.total, key: k },
+      };
     });
-    repealSeries.push({
-      y: (item.repeal / tot) * 100,
-      custom: { count: item.repeal, total: item.total, weekKey: wk },
-    });
-    disagreeSeries.push({
-      y: (item.disagree / tot) * 100,
-      custom: { count: item.disagree, total: item.total, weekKey: wk },
-    });
-  }
 
-  return { categories, agreeSeries, repealSeries, disagreeSeries };
+  return {
+    categories,
+    agreeSeries: make(x => x.agree),
+    repealSeries: make(x => x.repeal),
+    disagreeSeries: make(x => x.disagree),
+  };
 }
 
 export default function LegislativeStanceAreaHC({
@@ -113,13 +159,13 @@ export default function LegislativeStanceAreaHC({
   endDate,
 }: Props) {
   const { categories, agreeSeries, repealSeries, disagreeSeries } = useMemo(
-    () => buildFilteredWeeks(data, startDate, endDate),
+    () => buildSeries(data, startDate, endDate),
     [data, startDate, endDate]
   );
 
   const summary = useMemo(() => {
     if (!agreeSeries.length) return null;
-    const delta = (series: Highcharts.PointOptionsObject[]) =>
+    const delta = (series: SeriesPoint[]) =>
       (series[series.length - 1].y as number) - (series[0].y as number);
     return {
       agree: delta(agreeSeries),
@@ -209,24 +255,9 @@ export default function LegislativeStanceAreaHC({
       series: { animation: { duration: 350 } },
     },
     series: [
-      {
-        type: "area",
-        name: "반대",
-        color: COLORS.disagree,
-        data: disagreeSeries,
-      },
-      {
-        type: "area",
-        name: "폐지완화",
-        color: COLORS.repeal,
-        data: repealSeries,
-      },
-      {
-        type: "area",
-        name: "개정강화",
-        color: COLORS.agree,
-        data: agreeSeries,
-      },
+      { type: "area", name: "반대", color: COLORS.disagree, data: disagreeSeries },
+      { type: "area", name: "폐지완화", color: COLORS.repeal, data: repealSeries },
+      { type: "area", name: "개정강화", color: COLORS.agree, data: agreeSeries },
     ],
   };
 

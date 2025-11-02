@@ -5,10 +5,8 @@ import HighchartsReact from "highcharts-react-official";
 
 /**
  * LegislativeFieldHeatmap (Highcharts version, Turbopack-safe UMD init)
- * - x축: addsocial의 개정강화 / 폐지약화(또는 폐지완화) / 반대
- * - y축: 기존과 동일 (최상위 분야 키 = rows)
- * - 툴팁: 정확한 비율(%) + 해당 버킷의 댓글 수
- * - 팔레트: #FFCDB2 → #FFB4A2 → #E5989B → #B5828C (colorAxis.stops)
+ * 방법 A 적용: 사용자가 기간(startDate/endDate)을 지정하면
+ * 언제나 daily_timeline을 해당 구간으로 슬라이스해 집계합니다.
  */
 
 export default function Heatmap({
@@ -30,15 +28,10 @@ export default function Heatmap({
     (async () => {
       if (typeof window === "undefined") return;
       try {
-        // UMD가 window.Highcharts를 찾도록 설정
         (window as any).Highcharts = Highcharts;
-
-        // Turbopack에서 ESM/CJS 꼬임 회피: 호출 없이 사이드이펙트 import
         await import("highcharts/modules/heatmap.js").catch(async () => {
-          // 일부 배포본에서 .js 확장자가 없을 수 있어 fallback
           await import("highcharts/modules/heatmap");
         });
-
         if (!cancelled) setHcReady(true);
       } catch (e) {
         console.error("Highcharts heatmap init failed:", e);
@@ -60,30 +53,32 @@ export default function Heatmap({
     }
 
     const rows = Object.keys(data); // 분야 (y축)
+    const cols = ["개정강화", "폐지약화", "현상유지"] as const;
 
-    // x축을 addsocial의 3개 버킷으로 고정
-    const cols = ["개정강화", "폐지약화", "반대"] as const;
+    // ✅ 방법 A: 기간이 지정되면 항상 daily 슬라이스 사용
+    const useDailySlice = Boolean(startDate && endDate);
 
-    // 일자 필터 (일단위에서만 사용)
-    const inRange = (key: string) => {
-      if (period !== "daily_timeline" || !startDate || !endDate) return true;
-      return key >= startDate && key <= endDate; // YYYY-MM-DD 문자열 비교
-    };
-
-    // 집계: 각 분야(row)별로 버킷(개정강화/폐지약화/반대) 합산
     type BucketKey = (typeof cols)[number];
     const agg: Record<string, Record<BucketKey, number>> = {};
 
     for (const row of rows) {
-      agg[row] = { "개정강화": 0, "폐지약화": 0, "반대": 0 };
+      agg[row] = { "개정강화": 0, "폐지약화": 0, "현상유지": 0 };
 
+      // 타임라인 선택
       const timeline =
-        data[row]?.addsocial?.[
-          period === "daily_timeline" ? "daily_timeline" : period
-        ] ?? {};
+        useDailySlice
+          ? (data[row]?.addsocial?.["daily_timeline"] ?? {})
+          : (data[row]?.addsocial?.[
+              period === "daily_timeline" ? "daily_timeline" : period
+            ] ?? {});
 
       for (const k of Object.keys(timeline)) {
-        if (period === "daily_timeline" && !inRange(k)) continue;
+        // 키 필터: daily 슬라이스인 경우에만 날짜 범위 적용
+        if (useDailySlice) {
+          // YYYY-MM-DD 문자열 비교 전제
+          if (!(k >= (startDate as string) && k <= (endDate as string))) continue;
+        }
+
         const entry = timeline[k];
         const mids = entry?.["중분류목록"] ?? {};
 
@@ -93,39 +88,36 @@ export default function Heatmap({
           for (const subKey of Object.keys(subMap)) {
             const sub = subMap[subKey] ?? {};
 
-            // 개정강화 / 폐지약화(또는 폐지완화) / 반대 카운트 안정적으로 추출
-            const gaejeong = Number(
-              sub?.["찬성"]?.["개정강화"]?.count ?? 0
-            );
-            // 생성 스크립트는 "폐지약화" 를 사용하지만, 사용자가 "폐지완화" 라고 입력할 가능성 대응
-            const paejiYakhwa = Number(
-              sub?.["찬성"]?.["폐지약화"]?.count ?? 0
-            );
-            const paejiWanhwa = Number(
-              sub?.["찬성"]?.["폐지완화"]?.count ?? 0
-            );
+            const gaejeong = Number(sub?.["찬성"]?.["개정강화"]?.count ?? 0);
+
+            // "폐지약화" vs "폐지완화" 호환
+            const paejiYakhwa = Number(sub?.["찬성"]?.["폐지약화"]?.count ?? 0);
+            const paejiWanhwa = Number(sub?.["찬성"]?.["폐지완화"]?.count ?? 0);
             const paeji = paejiYakhwa || paejiWanhwa;
 
-            // 반대: counts["반대"] 가 신뢰 가능한 합계이며, 없으면 소셜목록 길이로 대체
-            const bandae = Number(sub?.counts?.["반대"]) ||
-              (Array.isArray(sub?.["반대"]?.["소셜목록"]) ? sub["반대"]["소셜목록"].length : 0);
+            // 현상유지: counts["현상유지"] 우선, 없으면 소셜목록 길이
+            const bandae =
+              Number(sub?.counts?.["현상유지"]) ||
+              (Array.isArray(sub?.["현상유지"]?.["소셜목록"])
+                ? sub["현상유지"]["소셜목록"].length
+                : 0);
 
             agg[row]["개정강화"] += gaejeong;
             agg[row]["폐지약화"] += paeji;
-            agg[row]["반대"] += bandae;
+            agg[row]["현상유지"] += bandae;
           }
         }
       }
     }
 
-    // 포인트 구성: value = 해당 버킷 비율(= bucket / rowTotal), total = 해당 버킷 절대값
+    // 포인트 구성
     type Pt = { x: number; y: number; value: number; total: number };
     const points: Pt[] = [];
 
     for (let y = 0; y < rows.length; y++) {
       const rowKey = rows[y];
       const rowTotal =
-        agg[rowKey]["개정강화"] + agg[rowKey]["폐지약화"] + agg[rowKey]["반대"];
+        agg[rowKey]["개정강화"] + agg[rowKey]["폐지약화"] + agg[rowKey]["현상유지"];
 
       for (let x = 0; x < cols.length; x++) {
         const colKey = cols[x];
@@ -135,13 +127,13 @@ export default function Heatmap({
       }
     }
 
-    // 인사이트 (가장 높은 비율, 가장 낮은 비율, 절대 수 최다)
+    // 인사이트
     type Cell = { rowKey: string; colKey: BucketKey; ratio: number; total: number };
     const cells: Cell[] = [];
     for (let y = 0; y < rows.length; y++) {
       const rowKey = rows[y];
       const rowTotal =
-        agg[rowKey]["개정강화"] + agg[rowKey]["폐지약화"] + agg[rowKey]["반대"];
+        agg[rowKey]["개정강화"] + agg[rowKey]["폐지약화"] + agg[rowKey]["현상유지"];
       for (let x = 0; x < cols.length; x++) {
         const colKey = cols[x];
         const bucket = agg[rowKey][colKey];

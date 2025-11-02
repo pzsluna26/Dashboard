@@ -1,0 +1,182 @@
+{
+    "privacy": {
+        "summary": {
+            "totalArticles": 6200,
+            "totalComments": 2100,
+            "newsGrowthRate": 0.45,
+            "socialGrowthRate": 0.25
+        },
+        "dailyData": [
+            {
+                "date": "2024-10-01",
+                "news": 580,
+                "social": 200
+            },
+            {
+                "date": "2024-10-02",
+                "news": 620,
+                "social": 190
+            },
+            {
+                "date": "2024-10-03",
+                "news": 550,
+                "social": 180
+            },
+            {
+                "date": "2024-10-04",
+                "news": 680,
+                "social": 220
+            },
+            {
+                "date": "2024-10-05",
+                "news": 720,
+                "social": 240
+            },
+            {
+                "date": "2024-10-06",
+                "news": 510,
+                "social": 160
+            },
+            {
+                "date": "2024-10-07",
+                "news": 740,
+                "social": 250
+            }
+        ]
+    },
+    "child": {
+        "summary": {
+            "totalArticles": 5800,
+            "totalComments": 1950,
+            "newsGrowthRate": 0.38,
+            "socialGrowthRate": 0.18
+        },
+        "dailyData": [
+            {
+                "date": "2024-10-01",
+                "news": 520,
+                "social": 180
+            },
+            {
+                "date": "2024-10-02",
+                "news": 560,
+                "social": 170
+            },
+            {
+                "date": "2024-10-03",
+                "news": 480,
+                "social": 160
+            },
+            {
+                "date": "2024-10-04",
+                "news": 600,
+                "social": 200
+            },
+            {
+                "date": "2024-10-05",
+                "news": 640,
+                "social": 210
+            },
+            {
+                "date": "2024-10-06",
+                "news": 450,
+                "social": 140
+            },
+            {
+                "date": "2024-10-07",
+                "news": 680,
+                "social": 220
+            }
+        ]
+    },
+    "safety": {
+        "summary": {
+            "totalArticles": 5500,
+            "totalComments": 1800,
+            "newsGrowthRate": 0.52,
+            "socialGrowthRate": 0.22
+        },
+        "dailyData": [
+            {
+                "date": "2024-10-01",
+                "news": 480,
+                "social": 160
+            },
+            {
+                "date": "2024-10-02",
+                "news": 520,
+                "social": 150
+            },
+            {
+                "date": "2024-10-03",
+                "news": 460,
+                "social": 140
+            },
+            {
+                "date": "2024-10-04",
+                "news": 580,
+                "social": 180
+            },
+            {
+                "date": "2024-10-05",
+                "news": 620,
+                "social": 190
+            },
+            {
+                "date": "2024-10-06",
+                "news": 420,
+                "social": 120
+            },
+            {
+                "date": "2024-10-07",
+                "news": 650,
+                "social": 200
+            }
+        ]
+    },
+    "finance": {
+        "summary": {
+            "totalArticles": 5593,
+            "totalComments": 1825,
+            "newsGrowthRate": 0.60,
+            "socialGrowthRate": 0.15
+        },
+        "dailyData": [
+            {
+                "date": "2024-10-01",
+                "news": 558,
+                "social": 200
+            },
+            {
+                "date": "2024-10-02",
+                "news": 498,
+                "social": 210
+            },
+            {
+                "date": "2024-10-03",
+                "news": 590,
+                "social": 200
+            },
+            {
+                "date": "2024-10-04",
+                "news": 396,
+                "social": 180
+            },
+            {
+                "date": "2024-10-05",
+                "news": 326,
+                "social": 160
+            },
+            {
+                "date": "2024-10-06",
+                "news": 664,
+                "social": 240
+            },
+            {
+                "date": "2024-10-07",
+                "news": 280,
+                "social": 150
+            }
+        ]
+    }
+}

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import NivoTrendChart from "@/features/news/components/NivoTrendChart/index";
-import BackgroundLayer from "@/shared/layout/BackgroundLayer";
+
 import Nav from "@/shared/layout/Nav";
 
 import { CATEGORIES } from "@/shared/constants/navigation";
@@ -56,8 +56,8 @@ export default function CategoryPage() {
     const apiPeriod = PERIOD_API_MAP[period];
 
     try {
-      const res = await fetch(`http://10.125.121.213:8080/api/news/category/${slug}/${apiPeriod}`, {
-      //const res = await fetch("/data/data.json",
+      // const res = await fetch(`http://10.125.121.213:8080/api/news/category/${slug}/${apiPeriod}`, {
+      const res = await fetch("/data/data.json",{
         cache: "no-store",
       });
 

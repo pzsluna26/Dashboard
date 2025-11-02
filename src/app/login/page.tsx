@@ -2,7 +2,7 @@
 
 'use client'
 import React, { useState } from 'react';
-import BackgroundLayer from '@/shared/layout/BackgroundLayer';
+import BackgroundGradient from '@/shared/layout/BackgroundGradient';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -28,7 +28,11 @@ export default function Login() {
   return (
     <div className="w-full relative min-h-screen flex items-center justify-center text-[#2D2928] overflow-hidden">
       {/* ===== 배경 레이어: 대시보드와 동일 팔레트 ===== */}
-      <BackgroundLayer />
+      <BackgroundGradient
+             stops={["#ced7dc", "#eaebed", "#f6efec", "#f8e7e0"]}
+             highlights
+             glass
+           />
 
       {/* ===== 로그인 카드 ===== */}
       <div className="relative z-10 flex min-h-full flex-col justify-center px-8 py-20 lg:px-20 shadow-xl border border-white/40 rounded-xl bg-white/60 backdrop-blur-md">

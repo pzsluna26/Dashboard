@@ -1,20 +1,31 @@
 "use client";
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import dynamic from "next/dynamic";
-import type { ForceGraphMethods, LinkObject, NodeObject } from "react-force-graph-2d";
+import type {
+  ForceGraphMethods,
+  LinkObject,
+  NodeObject,
+} from "react-force-graph-2d";
 
-// SSR을 피하기 위해 dynamic import (Next.js 권장)
-const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), { ssr: false });
+const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), {
+  ssr: false,
+});
 
 export type PeriodKey = "daily_timeline" | "weekly_timeline" | "monthly_timeline";
-
 type NodeType = "legal" | "incident";
 
 interface BaseNode extends NodeObject {
   id: string;
   type: NodeType;
   label: string;
-  x?: number; y?: number; // force-graph 내부 좌표
+  x?: number;
+  y?: number;
 }
 
 interface LegalNode extends BaseNode {
@@ -47,16 +58,16 @@ export interface NetworkGraphProps {
   maxArticles?: number;
 }
 
-// 텍스트 자르기(한글 포함) 유틸 — 코드포인트 단위로 20자 제한
 function truncateText(input: string, max = 20) {
   if (!input) return "";
-  const arr = [...input]; // surrogate pair 안전
+  const arr = [...input];
   return arr.length > max ? arr.slice(0, max).join("") + "…" : input;
 }
 
 function inDateRange(dateStr: string, start?: string, end?: string) {
   if (!start && !end) return true;
-  const n = (s?: string) => (s ? new Date(s + "T00:00:00").getTime() : undefined);
+  const n = (s?: string) =>
+    s ? new Date(s + "T00:00:00").getTime() : undefined;
   const d = new Date(dateStr + "T00:00:00").getTime();
   const s = n(start);
   const e = n(end);
@@ -71,7 +82,6 @@ function buildGraph(
 ) {
   const { startDate, endDate, maxArticles } = opts;
   const domains: string[] = Object.keys(raw || {});
-
   const legalMap: Record<string, { total: number; incidents: Record<string, IncidentNode> }> = {};
 
   for (const dom of domains) {
@@ -80,17 +90,15 @@ function buildGraph(
       if (!inDateRange(dateStr, startDate, endDate)) continue;
       const dayEntry = daily[dateStr];
       const mids = dayEntry?.["중분류목록"] || {};
-
       for (const mid of Object.keys(mids)) {
         const midObj = mids[mid];
         const subs = midObj?.["소분류목록"] || {};
-
         for (const subKey of Object.keys(subs)) {
           const s = subs[subKey];
           const agreeList = (s?.["찬성"]?.["개정강화"]?.["소셜목록"] || []) as Array<{ content: string }>;
           const repealList = (s?.["찬성"]?.["폐지약화"]?.["소셜목록"] || []) as Array<{ content: string }>;
           const disagreeList = (s?.["반대"]?.["소셜목록"] || []) as Array<{ content: string }>;
-          const count = (agreeList?.length || 0) + (repealList?.length || 0) + (disagreeList?.length || 0);
+          const count = agreeList.length + repealList.length + disagreeList.length;
 
           if (!legalMap[mid]) legalMap[mid] = { total: 0, incidents: {} };
           const incId = `${mid}::${subKey}`;
@@ -106,16 +114,9 @@ function buildGraph(
           }
 
           legalMap[mid].incidents[incId].count += count;
-          legalMap[mid].incidents[incId].sample!.agree!.push(
-            ...agreeList.slice(0, 2).map((x) => x.content)
-          );
-          legalMap[mid].incidents[incId].sample!.repeal!.push(
-            ...repealList.slice(0, 2).map((x) => x.content)
-          );
-          legalMap[mid].incidents[incId].sample!.disagree!.push(
-            ...disagreeList.slice(0, 2).map((x) => x.content)
-          );
-
+          legalMap[mid].incidents[incId].sample!.agree!.push(...agreeList.slice(0, 2).map((x) => x.content));
+          legalMap[mid].incidents[incId].sample!.repeal!.push(...repealList.slice(0, 2).map((x) => x.content));
+          legalMap[mid].incidents[incId].sample!.disagree!.push(...disagreeList.slice(0, 2).map((x) => x.content));
           legalMap[mid].total += count;
         }
       }
@@ -132,7 +133,12 @@ function buildGraph(
   const links: LinkDatum[] = [];
 
   for (const mid of topLegal) {
-    nodes.push({ id: mid, type: "legal", label: mid, totalCount: legalMap[mid].total } as LegalNode);
+    nodes.push({
+      id: mid,
+      type: "legal",
+      label: mid,
+      totalCount: legalMap[mid].total,
+    });
 
     const incs = Object.values(legalMap[mid].incidents).filter((i) => i.count > 0);
     incs
@@ -140,14 +146,17 @@ function buildGraph(
       .slice(0, 10)
       .forEach((inc) => {
         nodes.push(inc);
-        links.push({ source: mid, target: inc.id, weight: inc.count } as LinkDatum);
+        links.push({
+          source: mid,
+          target: inc.id,
+          weight: inc.count,
+        });
       });
   }
 
   return { nodes, links };
 }
 
-// sqrt 스케일을 d3 없이 구현
 function makeSqrtSizeScale(counts: number[], outMin = 8, outMax = 36) {
   const min = counts.length ? Math.min(...counts) : 1;
   const max = counts.length ? Math.max(...counts) : 50;
@@ -160,15 +169,7 @@ function makeSqrtSizeScale(counts: number[], outMin = 8, outMax = 36) {
   };
 }
 
-// 캔버스 라운드 사각형 헬퍼
-function roundRectPath(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number
-) {
+function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   const rr = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
   ctx.moveTo(x + rr, y);
@@ -183,204 +184,91 @@ function roundRectPath(
   ctx.closePath();
 }
 
-export default function NetworkGraph({
-  data,
-  startDate,
-  endDate,
-  period = "daily_timeline",
-  maxArticles = 5,
-}: NetworkGraphProps) {
+export default function NetworkGraph({ data, startDate, endDate, period = "daily_timeline", maxArticles = 5 }: NetworkGraphProps) {
   const fgRef = useRef<ForceGraphMethods>();
   const [selected, setSelected] = useState<LegalNode | IncidentNode | null>(null);
+  const graph = useMemo(() => buildGraph(data, { startDate, endDate, period, maxArticles }), [data, startDate, endDate, period, maxArticles]);
 
-  // 1) 그래프 계산
-  const graph = useMemo(
-    () => buildGraph(data, { startDate, endDate, period, maxArticles }),
-    [data, startDate, endDate, period, maxArticles]
-  );
+  const sortedIncidents = useMemo(() => {
+    return (graph.nodes as IncidentNode[]).filter((n) => n.type === "incident").sort((a, b) => b.count - a.count);
+  }, [graph.nodes]);
 
-  // 2) 슬라이드 상태 및 정렬된 incident 목록
-  const [incidentIndex, setIncidentIndex] = useState<number>(0);
+  const [incidentIndex, setIncidentIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<"agree" | "repeal" | "disagree">("agree");
+
+  useEffect(() => {
+    if (!sortedIncidents.length) return;
+    const idx = selected?.type === "incident" ? sortedIncidents.findIndex((x) => x.id === selected.id) : 0;
+    setIncidentIndex(Math.max(0, idx));
+    if (!selected) setSelected(sortedIncidents[0]);
+  }, [sortedIncidents]);
+
+  useEffect(() => {
+    if (selected) return;
+    const pool = sortedIncidents.length ? sortedIncidents : graph.nodes;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    setSelected(pick as any);
+  }, [graph.nodes]);
+
   useEffect(() => {
     setActiveTab("agree");
   }, [selected]);
 
-  const sortedIncidents = useMemo(() => {
-    const list = (graph.nodes as any[]).filter((n) => n.type === "incident") as IncidentNode[];
-    return list.slice().sort((a, b) => b.count - a.count);
-  }, [graph.nodes]);
-
-  // graph/incident 목록이 바뀌면 초기 인덱스 및 선택 반영
-  useEffect(() => {
-    if (!sortedIncidents.length) return;
-    const idx =
-      selected && selected.type === "incident"
-        ? Math.max(0, sortedIncidents.findIndex((x) => x.id === selected.id))
-        : 0;
-    setIncidentIndex(idx >= 0 ? idx : 0);
-    if (!selected) setSelected(sortedIncidents[0]);
-  }, [sortedIncidents, selected]);
-
-  // 초기 랜덤 선택 (incident 우선)
-  useEffect(() => {
-    if (!graph?.nodes?.length) return;
-    if (selected) return;
-    const incs = (graph.nodes as any[]).filter((n) => n.type === "incident");
-    const pool = incs.length ? incs : (graph.nodes as any[]);
-    const pick = pool[Math.floor(Math.random() * pool.length)];
-    setSelected(pick as any);
-  }, [graph.nodes, selected]);
-
-  // 사이즈 스케일
   const sizeScale = useMemo(() => {
-    const counts = graph.nodes
-      .filter((n: any) => n.type === "incident")
-      .map((n: any) => n.count as number);
-    return makeSqrtSizeScale(counts, 8, 36);
+    const counts = graph.nodes.filter((n: any) => n.type === "incident").map((n: any) => n.count as number);
+    return makeSqrtSizeScale(counts);
   }, [graph.nodes]);
 
-  // 3) 슬라이드 이동 핸들러
-  const goPrev = useCallback(() => {
+  const goPrev = () => {
     if (!sortedIncidents.length) return;
     const nextIdx = (incidentIndex - 1 + sortedIncidents.length) % sortedIncidents.length;
     setIncidentIndex(nextIdx);
     setSelected(sortedIncidents[nextIdx]);
-  }, [incidentIndex, sortedIncidents]);
+  };
 
-  const goNext = useCallback(() => {
+  const goNext = () => {
     if (!sortedIncidents.length) return;
     const nextIdx = (incidentIndex + 1) % sortedIncidents.length;
     setIncidentIndex(nextIdx);
     setSelected(sortedIncidents[nextIdx]);
-  }, [incidentIndex, sortedIncidents]);
-
-  // 스와이프 지원
-  const touchStartX = useRef<number | null>(null);
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0]?.clientX ?? null;
   };
+
+  const touchStartX = useRef<number | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => (touchStartX.current = e.touches[0]?.clientX ?? null);
   const onTouchEnd = (e: React.TouchEvent) => {
-    const startX = touchStartX.current;
-    if (startX == null) return;
-    const endX = e.changedTouches[0]?.clientX ?? startX;
-    const dx = endX - startX;
-    if (Math.abs(dx) > 40) {
-      if (dx < 0) goNext();
-      else goPrev();
-    }
+    if (touchStartX.current == null) return;
+    const dx = (e.changedTouches[0]?.clientX ?? 0) - touchStartX.current;
+    if (Math.abs(dx) > 40) dx < 0 ? goNext() : goPrev();
     touchStartX.current = null;
   };
 
-  // 링크 거리/강도 등 force 설정
   useEffect(() => {
     const fg = fgRef.current;
     if (!fg) return;
     const linkForce: any = fg.d3Force("link");
-    if (linkForce) {
-      linkForce.distance((l: any) => 80 + Math.sqrt(l.weight || 0) * 2).strength(0.2);
-    }
-    // 약간 더 퍼지게 (charge)
+    linkForce?.distance((l: any) => 80 + Math.sqrt(l.weight || 0) * 2).strength(0.2);
     const charge: any = fg.d3Force("charge");
-    if (charge) {
-      charge.strength(-180);
-    }
-    // 중앙 정렬은 기본 center force 내장
+    charge?.strength(-180);
   }, [graph.links]);
-
-  // 캔버스에서 노드 커스텀 렌더링(원/사각형 + 텍스트)
-  const nodeCanvasObject = useCallback(
-    (node: NodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
-      const n = node as any as LegalNode | IncidentNode;
-      const label = n.label ?? "";
-      const fontSize = n.type === "legal" ? 12 : 11;
-      ctx.font = `${fontSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-
-      if (n.type === "incident") {
-        const r = sizeScale((n as IncidentNode).count);
-        // fill
-        ctx.fillStyle = "#e6f0ff";
-        ctx.beginPath();
-        ctx.arc(n.x!, n.y!, r, 0, 2 * Math.PI);
-        ctx.fill();
-        // stroke
-        ctx.strokeStyle = "#7aa1ff";
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        // label
-        ctx.fillStyle = "#213547";
-        ctx.fillText(`${label}`, n.x!, n.y!);
-      } else {
-        const w = 140;
-        const h = 44;
-        const x = n.x! - w / 2;
-        const y = n.y! - h / 2;
-
-        // fill
-        ctx.fillStyle = "#fff7ed";
-        roundRectPath(ctx, x, y, w, h, 10);
-        ctx.fill();
-
-        // stroke
-        ctx.strokeStyle = "#f59e0b";
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        // label
-        ctx.fillStyle = "#213547";
-        ctx.fillText(label, n.x!, n.y!);
-      }
-    },
-    [sizeScale]
-  );
-
-  // 히트 테스트용 포인터 도장
-  const nodePointerAreaPaint = useCallback(
-    (node: NodeObject, color: string, ctx: CanvasRenderingContext2D) => {
-      const n = node as any as LegalNode | IncidentNode;
-      ctx.fillStyle = color;
-      if (n.type === "incident") {
-        const r = sizeScale((n as IncidentNode).count);
-        ctx.beginPath();
-        ctx.arc(n.x!, n.y!, r + 2, 0, 2 * Math.PI);
-        ctx.fill();
-      } else {
-        const w = 140;
-        const h = 44;
-        const x = n.x! - w / 2;
-        const y = n.y! - h / 2;
-        roundRectPath(ctx, x, y, w, h, 10);
-        ctx.fill();
-      }
-    },
-    [sizeScale]
-  );
 
   const width = 920;
   const height = 320;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 w-full h-[390px]">
-      {/* 좌측: 그래프 */}
-      <div className="lg:col-span-2 rounded-2xl bg-white/55 backdrop-blur-md p-4 relative">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full h-[380px]">
+      {/* LEFT: Graph */}
+      <div className="lg:col-span-2 bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl ring-1 ring-white/70 border border-neutral-200 p-4">
         <div className="flex items-center gap-2 text-xs text-neutral-600">
-          <div className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-full bg-[#e6f0ff] border border-[#7aa1ff]" /> Incident (원형)
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="inline-block w-4 h-3 rounded bg-[#fff7ed] border border-[#f59e0b]" /> Legal Article (사각형)
-          </div>
+          <span className="inline-block w-3 h-3 rounded-full bg-[#e6f0ff] border border-[#7aa1ff]" /> Incident
+          <span className="inline-block w-4 h-3 rounded bg-[#fff7ed] border border-[#f59e0b]" /> Legal
           <div className="ml-auto">드래그 이동 · 휠 줌 · 클릭 상세</div>
         </div>
-
-        <div className="rounded-xl bg-white/40 overflow-hidden mt-5" style={{ width: "100%", height: height }}>
+        <div className="mt-4 rounded-xl overflow-hidden" style={{ width: "100%", height }}>
           <ForceGraph2D
             ref={fgRef as any}
             width={width}
             height={height}
-            graphData={{ nodes: graph.nodes as NodeObject[], links: graph.links as LinkObject[] }}
+            graphData={{ nodes: graph.nodes, links: graph.links }}
             nodeRelSize={4}
             enableNodeDrag
             cooldownTicks={60}
@@ -388,9 +276,47 @@ export default function NetworkGraph({
             linkColor={() => "#9aa4b2"}
             linkOpacity={0.6}
             onNodeClick={(n) => setSelected(n as any)}
-            nodeCanvasObject={nodeCanvasObject}
-            nodePointerAreaPaint={nodePointerAreaPaint}
-            // 기본 줌 범위 (D3 줌 내부적으로 사용)
+            nodeCanvasObject={(node, ctx) => {
+              const n = node as LegalNode | IncidentNode;
+              const label = n.label ?? "";
+              ctx.font = `${n.type === "legal" ? 12 : 11}px Inter`;
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              if (n.type === "incident") {
+                const r = sizeScale(n.count);
+                ctx.fillStyle = "#e6f0ff";
+                ctx.beginPath();
+                ctx.arc(n.x!, n.y!, r, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.strokeStyle = "#7aa1ff";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+              } else {
+                const w = 140, h = 44, x = n.x! - w / 2, y = n.y! - h / 2;
+                ctx.fillStyle = "#fff7ed";
+                roundRectPath(ctx, x, y, w, h, 10);
+                ctx.fill();
+                ctx.strokeStyle = "#f59e0b";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+              }
+              ctx.fillStyle = "#213547";
+              ctx.fillText(label, n.x!, n.y!);
+            }}
+            nodePointerAreaPaint={(node, color, ctx) => {
+              const n = node as LegalNode | IncidentNode;
+              ctx.fillStyle = color;
+              if (n.type === "incident") {
+                const r = sizeScale(n.count);
+                ctx.beginPath();
+                ctx.arc(n.x!, n.y!, r + 2, 0, 2 * Math.PI);
+                ctx.fill();
+              } else {
+                const w = 140, h = 44, x = n.x! - w / 2, y = n.y! - h / 2;
+                roundRectPath(ctx, x, y, w, h, 10);
+                ctx.fill();
+              }
+            }}
             minZoom={0.3}
             maxZoom={2}
           />

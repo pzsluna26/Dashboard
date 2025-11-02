@@ -30,9 +30,9 @@ const BTN_SHADOW_ACTIVE = "0 6px 14px rgba(60,85,100,0.32), 0 2px 6px rgba(60,85
 
 const MAX_RANGE_DAYS = 30;
 
-// ✅ 2025-01-01 ~ 2025-10-31로 범위 고정
+// ✅ 2025-01-01 ~ 2025-08-13 로 범위 고정
 const MIN_DATE = new Date(2025, 0, 1);  // 2025-01-01
-const MAX_DATE = new Date(2025, 9, 31); // 2025-10-31
+const MAX_DATE = new Date(2025, 7, 13); // 2025-08-13
 
 // ✅ 라우트 버튼
 const routes = [
@@ -80,9 +80,14 @@ export default function Remote({
 
   // 시작일 선택 후 30일 초과 날짜 클릭 불가
   const disabledMatchers = useMemo(() => {
-    if (!range.from || range.to) return [] as any[];
-    const maxEnd = addDays(range.from, MAX_RANGE_DAYS - 1);
-    return [(d: Date) => isAfter(d, maxEnd)];
+    const matchers: any[] = [
+      (d: Date) => d < MIN_DATE || d > MAX_DATE,
+    ];
+    if (range.from && !range.to) {
+      const maxEnd = addDays(range.from, MAX_RANGE_DAYS - 1);
+      matchers.push((d: Date) => isAfter(d, maxEnd));
+    }
+    return matchers;
   }, [range.from, range.to]);
 
   // DayPicker 선택
@@ -168,13 +173,13 @@ export default function Remote({
             }
             const cs = (el.ownerDocument!.defaultView as Window).getComputedStyle(el);
             const bgImg = cs.getPropertyValue("background-image");
-            if (/lab\(/i.test(bgImg) || /color\(/i.test(bgImg)) {
+            if (/lab\(/i.test(bgImg) || /color\(/i.test(bgImg)) {
               el.style.backgroundImage = "none";
               const bgColor = cs.getPropertyValue("background-color");
               if (bgColor) el.style.backgroundColor = bgColor;
             }
             const color = cs.getPropertyValue("color");
-            if (/lab\(/i.test(color) || /color\(/i.test(color)) {
+            if (/lab\(/i.test(color) || /color\(/i.test(color)) {
               el.style.color = color;
             }
             // fixed/sticky 요소가 잘리는 경우 임시로 static 처리
@@ -482,7 +487,7 @@ export default function Remote({
               fromYear={2025}
               toYear={2025}
               fromMonth={new Date(2025, 0)} // 2025-01
-              toMonth={new Date(2025, 9)}   // 2025-10
+              toMonth={new Date(2025, 7)}   // 2025-08
 
               // 강조 스타일(상태 클래스)
               modifiersClassNames={{
