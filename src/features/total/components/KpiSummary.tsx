@@ -129,14 +129,13 @@ export default function KpiSummary({
           let bodyText = "";
           try {
             bodyText = await res.text();
-          } catch {}
+          } catch { }
           const hint =
             res.status === 400
               ? "\n힌트: 서버가 start(및 end) 파라미터를 필수로 요구합니다. YYYY-MM-DD 형식인지와 KST 기준 날짜인지 확인하세요."
               : "";
           throw new Error(
-            `HTTP ${res.status} ${res.statusText}${
-              bodyText ? " - " + bodyText : ""
+            `HTTP ${res.status} ${res.statusText}${bodyText ? " - " + bodyText : ""
             }${hint}`
           );
         }
@@ -267,7 +266,31 @@ export default function KpiSummary({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm text-gray-600">종합 KPI 요약</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4 text-neutral-400 cursor-pointer group-hover:text-neutral-600 transition"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"
+            />
+          </svg>
+
+          {/* 툴팁 */}
+          <div className="absolute top-6 left-0 z-10 hidden group-hover:block w-[260px] text-[11px] text-neutral-800 bg-white border border-neutral-200 shadow-md rounded-md p-3">
+            최근 기간 동안의 전체 의견 건수를 요약한 지표입니다.
+            <br />
+            의견 변화 추세, 여론 성향 분포 등을 종합적으로 보여줍니다.
+          </div>
+        </div>
         <button
           onClick={() => setShowRaw((v) => !v)}
           className="text-xs px-3 py-1.5 rounded-lg border border-neutral-300 bg-white/70 hover:bg-white transition"
@@ -309,9 +332,8 @@ export default function KpiSummary({
                     {nf.format(c.totalArticles)}
                   </div>
                   <div
-                    className={`text-[11px] mt-0.5 flex items-center gap-1 ${
-                      upNews ? "text-emerald-600" : "text-rose-600"
-                    }`}
+                    className={`text-[11px] mt-0.5 flex items-center gap-1 ${upNews ? "text-emerald-600" : "text-rose-600"
+                      }`}
                   >
                     {c.newsGrowthRate > 0 && "▲"}
                     {c.newsGrowthRate < 0 && "▼"}
@@ -328,9 +350,8 @@ export default function KpiSummary({
                     {nf.format(c.totalComments)}
                   </div>
                   <div
-                    className={`text-[11px] mt-0.5 flex items-center gap-1 ${
-                      upSoc ? "text-emerald-600" : "text-rose-600"
-                    }`}
+                    className={`text-[11px] mt-0.5 flex items-center gap-1 ${upSoc ? "text-emerald-600" : "text-rose-600"
+                      }`}
                   >
                     {c.socialGrowthRate > 0 && "▲"}
                     {c.socialGrowthRate < 0 && "▼"}

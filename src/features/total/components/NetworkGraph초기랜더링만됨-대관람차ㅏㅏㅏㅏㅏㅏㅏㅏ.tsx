@@ -201,11 +201,6 @@ export default function NetworkGraph({
   const [selected, setSelected] = useState<LegalNode | IncidentNode | null>(null);
   const [activeTab, setActiveTab] = useState<"agree" | "repeal" | "disagree">("agree");
 
- const truncateText = (text: string, maxLength: number) => {
-  if (!text) return "";
-  return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
-};
-
   const graph = useMemo(() => {
     console.log("연결망 섹션 생성 시점과 데이터:", {
       startDate,
@@ -215,21 +210,7 @@ export default function NetworkGraph({
     });
 
     return buildGraph(data, { startDate, endDate, period, maxArticles });
-    
   }, [data, startDate, endDate, period, maxArticles]);
-useEffect(() => {
-  if (!graph?.nodes?.length) return;
-
-  // incident 노드만 필터
-  const incidentNodes = graph.nodes.filter((n) => n.type === "incident") as IncidentNode[];
-
-  if (incidentNodes.length === 0) return;
-
-  // 랜덤 노드 선택
-  const randomNode = incidentNodes[Math.floor(Math.random() * incidentNodes.length)];
-
-  setSelected(randomNode);
-}, [graph]);
 
   // Force 설정
   useEffect(() => {
@@ -259,7 +240,7 @@ useEffect(() => {
   }, [graph.nodes]);
 
   const width = 920;
-  const height = 490;
+  const height = 290;
 
   // ✅ 탭 메타 (누락되면 ReferenceError)
   const tabMeta = useMemo(() => {
@@ -373,10 +354,9 @@ useEffect(() => {
               <div className="text-neutral-500 text-xs mb-1">법조항</div>
               <div className="text-base font-semibold mb-1">{(selected as LegalNode).label}</div>
               {(selected as LegalNode).description && (
-               <p className="text-[13px] leading-relaxed text-neutral-600 bg-white/60 border border-neutral-200 rounded-md px-3 py-3">
-  {truncateText((selected as LegalNode).description ?? "", 500)}
-</p>
-
+                <p className="text-[13px] leading-relaxed text-neutral-600 bg-white/60 border border-neutral-200 rounded-md px-2 py-2">
+                  {(selected as LegalNode).description}
+                </p>
               )}
             </div>
             <div className="text-xs text-neutral-500">

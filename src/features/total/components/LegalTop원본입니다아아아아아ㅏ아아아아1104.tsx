@@ -73,7 +73,7 @@ export default function LegalTop5({
 
   // 댓글 수 기준 상위 3개 추출
   const topItems = useMemo(() => {
-    return [...items].sort((a, b) => b.commentCount - a.commentCount).slice(0, 5);
+    return [...items].sort((a, b) => b.commentCount - a.commentCount).slice(0, 3);
   }, [items]);
 
   // 자동 슬라이드

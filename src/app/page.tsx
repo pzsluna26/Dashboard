@@ -16,7 +16,7 @@ const NetworkGraphContainer = dynamic(
   () => import("@/features/total/components/NetworkGraphContainer"),
   {
     ssr: false,
-    loading: () => <div className="h-[310px] grid place-items-center text-neutral-400">Loading…</div>,
+    loading: () => <div className="h-[600px] grid place-items-center text-neutral-400">Loading…</div>,
   }
 );
 

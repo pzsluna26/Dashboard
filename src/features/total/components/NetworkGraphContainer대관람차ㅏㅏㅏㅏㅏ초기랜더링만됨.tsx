@@ -20,42 +20,24 @@ interface GraphData {
   nodes: CategoryNode[];
 }
 
-interface NetworkGraphContainerProps {
-  startDate?: string; // optional
-  endDate?: string;
-  maxArticles?: number;
-}
-
-export default function NetworkGraphContainer({
-  startDate: propsStartDate,
-  endDate: propsEndDate,
-  maxArticles = 5,
-}: NetworkGraphContainerProps) {
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
+export default function NetworkGraphContainer() {
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
-  // ⏱️ 1. 초기 날짜 세팅 (단 한 번만 실행)
   useEffect(() => {
-    if (!propsStartDate || !propsEndDate) {
-      const end = dayjs("2025-08-13T23:59:59+09:00");
-      const start = end.subtract(13, "day");
+    // 기준일 설정
+    const end = dayjs("2025-08-13T23:59:59+09:00");
+    const start = end.subtract(13, "day"); // 총 14일 포함
 
-      setStartDate(start.format("YYYY-MM-DD"));
-      setEndDate(end.format("YYYY-MM-DD"));
-    }
-  }, [propsStartDate, propsEndDate]);
+    const formattedStart = start.format("YYYY-MM-DD");
+    const formattedEnd = end.format("YYYY-MM-DD");
 
-  // ⏱️ 2. props 값이 들어온 경우 최신화
-  useEffect(() => {
-    if (propsStartDate && propsEndDate) {
-      setStartDate(propsStartDate);
-      setEndDate(propsEndDate);
-    }
-  }, [propsStartDate, propsEndDate]);
+    setStartDate(formattedStart);
+    setEndDate(formattedEnd);
+  }, []);
 
-  // ⏱️ 3. 날짜가 세팅되면 fetch 실행
   useEffect(() => {
     if (!startDate || !endDate) return;
 
@@ -65,18 +47,18 @@ export default function NetworkGraphContainer({
         const res = await fetch(
           `http://10.125.121.213:8080/api/dashboard/network-graph?start=${startDate}&end=${endDate}`
         );
-        if (!res.ok) throw new Error("Failed to fetch");
+
+        if (!res.ok) throw new Error("Failed to fetch data");
 
         const json: GraphData = await res.json();
-
-        console.log("📦 연결망 섹션 데이터 fetch:", {
+        console.log("연결망 섹션 데이터:", {
           요청날짜: { startDate, endDate },
           받은데이터: json,
         });
 
         setGraphData(json);
-      } catch (err) {
-        console.error("❌ 네트워크 데이터 패치 실패:", err);
+      } catch (e) {
+        console.error("❌ 네트워크 데이터 패치 실패:", e);
         setGraphData(null);
       } finally {
         setLoading(false);
@@ -86,7 +68,6 @@ export default function NetworkGraphContainer({
     fetchData();
   }, [startDate, endDate]);
 
-  // 로딩 처리
   if (loading)
     return (
       <div className="text-sm text-neutral-500 p-4">
@@ -101,13 +82,12 @@ export default function NetworkGraphContainer({
       </div>
     );
 
-  // 그래프 렌더링
   return (
     <NetworkGraph
       data={graphData}
       startDate={startDate}
       endDate={endDate}
-      maxArticles={maxArticles}
+      maxArticles={5}
     />
   );
 }
