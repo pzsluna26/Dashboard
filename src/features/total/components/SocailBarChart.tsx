@@ -6,13 +6,9 @@ import {
   ResponsiveContainer, LabelList,
 } from "recharts";
 
-/* =========================
-   타입 정의
-========================= */
 type BackendRow = { category: string; 개정강화: number; 폐지완화: number; 현상유지: number };
 type BackendPayload = { data: BackendRow[] };
 
-// ✅ 날짜 유틸
 const fmtKstDate = (d: Date) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(d);
 
@@ -32,9 +28,6 @@ function formatCategory(value: string): string {
   return value;
 }
 
-/* =========================
-   메인 컴포넌트
-========================= */
 export default function SocialBarChart({
   data,
   period = "daily_timeline",
@@ -51,13 +44,13 @@ export default function SocialBarChart({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ 날짜 범위 자동 계산
+
   const { start, end } = useMemo(() => {
     if (startDate && endDate) return { start: startDate, end: endDate };
     return getDefaultRange();
   }, [startDate, endDate]);
 
-  // ✅ API 데이터 fetch
+
   useEffect(() => {
     const ac = new AbortController();
     (async () => {
@@ -73,10 +66,10 @@ export default function SocialBarChart({
 
         const json: BackendPayload = await res.json();
         setBackend(json.data ?? []);
-        console.log("📊 여론바차트json", json);
+        console.log("여론바차트json", json);
       } catch (e: any) {
         if (e.name !== "AbortError") {
-          console.error("❌ fetch 실패:", e);
+          console.error("fetch 실패:", e);
           setError(e.message);
         }
       } finally {
@@ -86,7 +79,7 @@ export default function SocialBarChart({
     return () => ac.abort();
   }, [start, end, period]);
 
-  /* ---------- 데이터 변환 ---------- */
+
   type Row = {
     category: string;
     reinforce: number;
@@ -136,7 +129,7 @@ export default function SocialBarChart({
   if (error)
     return (
       <div className="w-full h-[200px] grid place-items-center text-rose-500 text-sm">
-        ❌ 오류 발생: {error}
+         오류 발생: {error}
       </div>
     );
   if (!chartData.length)
@@ -146,7 +139,7 @@ export default function SocialBarChart({
       </div>
     );
 
-  /* ---------- 렌더 ---------- */
+
   return (
     <div className="w-full h-full flex flex-col">
       {/* 헤더 */}
@@ -187,7 +180,7 @@ export default function SocialBarChart({
         </div>
       </div>
 
-      {/* 차트 */}
+
       <div className="relative flex-1 w-full h-[400px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
@@ -229,7 +222,7 @@ export default function SocialBarChart({
         </ResponsiveContainer>
       </div>
 
-      {/* 하단 요약 테이블 */}
+ 
       <div className="mt-4 overflow-x-auto">
         <table className="min-w-full text-xs md:text-sm">
           <thead>
@@ -261,7 +254,7 @@ export default function SocialBarChart({
         </table>
       </div>
 
-      {/* 종합 인사이트 */}
+
       <div className="mt-5 rounded-2xl border border-neutral-200 bg-white/70 px-4 py-4">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-sm font-medium text-neutral-700">종합 인사이트</span>
@@ -285,9 +278,7 @@ export default function SocialBarChart({
   );
 }
 
-/* =========================
-   헬퍼/유틸
-========================= */
+
 function LegendSwatch({ color, label }: { color: string; label: string }) {
   return (
     <span className="inline-flex items-center gap-1">
@@ -349,9 +340,6 @@ function Badge({
 
 
 
-/* =========================
-   인사이트 계산
-========================= */
 function buildInsights(rows: any[]) {
   const totalReinforce = rows.reduce((a, r) => a + r.reinforce, 0);
   const totalRepeal = rows.reduce((a, r) => a + r.repeal, 0);
@@ -388,7 +376,7 @@ function buildInsights(rows: any[]) {
   const topOppose = rows.map((r) => ({ category: r.category, pct: r.opposePct }))
     .sort((a, b) => b.pct - a.pct)[0] || { category: "-", pct: 0 };
 
-  // 양극화: 가장 쏠림이 큰 / 가장 균형잡힌 카테고리
+ 
   const skewCalc = rows.map((r) => {
     const sorted = [r.reinforcePct, r.repealPct, r.opposePct].sort((a, b) => b - a);
     return {

@@ -17,12 +17,8 @@ type LawTrendChartData = {
   }[];
 };
 
-/**
- * 새 JSON 구조 기준:
- * all > news/social > [period] > {date/주차} > 대분류목록 > {category} > 중분류목록
- */
 export function transformRawData(
-  raw: any, // { all: { news, social } }
+  raw: any, 
   period: PeriodKey
 ): LawTrendChartData[] {
   if (!raw?.all) {
@@ -33,7 +29,7 @@ export function transformRawData(
   const newsTimeline = raw.all.news?.[period] || {};
   const socialTimeline = raw.all.social?.[period] || {};
 
-  // 대분류 목록 추출 (privacy, child, safety, finance)
+
   const firstKey = Object.keys(newsTimeline)[0];
   const categories =
     firstKey && newsTimeline[firstKey]?.["대분류목록"]
@@ -41,20 +37,20 @@ export function transformRawData(
       : [];
 
   return categories.map((category) => {
-    // 모든 기간(날짜, 주차 등)
+ 
     const dates = Object.keys(newsTimeline).sort();
 
     const entries = dates.map((date) => {
       const newsEntry = newsTimeline[date];
       const socialEntry = socialTimeline[date];
 
-      // ✅ 해당 날짜의 대분류 데이터 접근
+     
       const categoryNews =
         newsEntry?.["대분류목록"]?.[category]?.["중분류목록"] || {};
       const categorySocial =
         socialEntry?.["대분류목록"]?.[category]?.["중분류목록"] || {};
 
-      // ✅ 뉴스 데이터에서 가장 count 큰 중분류 선택
+
       let detail: Detail | undefined;
       let bestMid: string | null = null;
       let bestMidCount = -1;
@@ -67,7 +63,7 @@ export function transformRawData(
         }
       }
 
-      // ✅ 해당 중분류 내에서 소분류 중 최댓값 찾기
+   
       let bestSub: { name: string; count: number; article?: any } | null = null;
       if (bestMid) {
         const subList = (categoryNews[bestMid] as any)?.["소분류목록"] || {};
@@ -98,11 +94,10 @@ export function transformRawData(
         };
       }
 
-      // ✅ 소셜 데이터 합산
+ 
       const rawSocial = socialEntry?.counts ?? {};
       const socialTotal = getSocialValue(rawSocial);
 
-      // ✅ 뉴스 총합 (모든 중분류 count 합)
       const newsTotal = Object.values(categoryNews).reduce(
         (sum: number, mid: any) => sum + (mid.count || 0),
         0

@@ -36,7 +36,6 @@ export default function NetworkGraphContainer({
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ⏱️ 1. 초기 날짜 세팅 (단 한 번만 실행)
   useEffect(() => {
     if (!propsStartDate || !propsEndDate) {
       const end = dayjs("2025-08-13T23:59:59+09:00");
@@ -47,7 +46,6 @@ export default function NetworkGraphContainer({
     }
   }, [propsStartDate, propsEndDate]);
 
-  // ⏱️ 2. props 값이 들어온 경우 최신화
   useEffect(() => {
     if (propsStartDate && propsEndDate) {
       setStartDate(propsStartDate);
@@ -55,7 +53,7 @@ export default function NetworkGraphContainer({
     }
   }, [propsStartDate, propsEndDate]);
 
-  // ⏱️ 3. 날짜가 세팅되면 fetch 실행
+
   useEffect(() => {
     if (!startDate || !endDate) return;
 
@@ -69,14 +67,14 @@ export default function NetworkGraphContainer({
 
         const json: GraphData = await res.json();
 
-        console.log("📦 연결망 섹션 데이터 fetch:", {
+        console.log("연결망 섹션 데이터 fetch:", {
           요청날짜: { startDate, endDate },
           받은데이터: json,
         });
 
         setGraphData(json);
       } catch (err) {
-        console.error("❌ 네트워크 데이터 패치 실패:", err);
+        console.error("네트워크 데이터 패치 실패:", err);
         setGraphData(null);
       } finally {
         setLoading(false);
@@ -86,7 +84,6 @@ export default function NetworkGraphContainer({
     fetchData();
   }, [startDate, endDate]);
 
-  // 로딩 처리
   if (loading)
     return (
       <div className="text-sm text-neutral-500 p-4">
@@ -101,7 +98,6 @@ export default function NetworkGraphContainer({
       </div>
     );
 
-  // 그래프 렌더링
   return (
     <NetworkGraph
       data={graphData}

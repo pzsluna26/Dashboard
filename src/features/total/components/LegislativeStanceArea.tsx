@@ -4,41 +4,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 
-// const COLORS = {
-//   disagree: "#FFCDB2",
-//   repeal: "#ACE1AF",
-//   agree: "#C7D9DD",
-// };
-
 const COLORS = {
   disagree: "#ffcdb2d7",
   repeal: "#9abef78f",
   agree: "#94a3b8c0",
 };
-
-// const COLORS = {
-//   disagree: {
-//     linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-//     stops: [
-//       [0, "#FFD6C0"], // 상단 밝은색
-//       [1, "#e07b7ba9"], // 하단 진한색
-//     ],
-//   },
-//   repeal: {
-//     linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-//     stops: [
-//       [0, "#d7e6fdf5"],
-//       [1, "#90b6f1ff"],
-//     ],
-//   },
-//   agree: {
-//     linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-//     stops: [
-//       [0, "#c5d3e76c"],
-//       [1, "#9da0a5ff"],
-//     ],
-//   },
-// };
 
 type RawPoint = {
   date: string;
@@ -56,17 +26,17 @@ type SeriesPoint = {
   };
 };
 
-/** ✅ KST 기준 날짜 포맷 */
+
 const fmtKstDate = (d: Date) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(d);
 
-/** ✅ 고정된 기본 날짜(2025-08-13) 기준 최근 14일 구간 계산 */
+
 const getDefaultRange = () => {
   const end = new Date("2025-08-13T23:59:59+09:00");
   const start = new Date(end.getTime() - 13 * 24 * 60 * 60 * 1000);
   return {
-    start: fmtKstDate(start), // 예: 2025-07-31
-    end: fmtKstDate(end),     // 예: 2025-08-13
+    start: fmtKstDate(start), 
+    end: fmtKstDate(end),     
   };
 };
 
@@ -79,7 +49,7 @@ export default function LegislativeStanceAreaHC({
 }) {
   const [rawData, setRawData] = useState<RawPoint[]>([]);
 
-  // ✅ props가 비어 있으면 기본 날짜를 사용
+ 
   const { start: defaultStart, end: defaultEnd } = useMemo(() => getDefaultRange(), []);
   const effectiveStart = startDate || defaultStart;
   const effectiveEnd = endDate || defaultEnd;
@@ -97,16 +67,16 @@ export default function LegislativeStanceAreaHC({
 
         const data = Array.isArray(json.data) ? json.data : [];
         setRawData(data);
-        console.log("✅ 패치된 데이터", { effectiveStart, effectiveEnd, data });
+        console.log("패치된 데이터", { effectiveStart, effectiveEnd, data });
       } catch (err) {
-        console.error("❌ Failed to fetch stance area data:", err);
+        console.error("Failed to fetch stance area data:", err);
       }
     };
 
     fetchData();
   }, [effectiveStart, effectiveEnd]);
 
-  // 안전한 카테고리 처리
+
   const categories = rawData.map((d) =>
     d.date ? d.date.slice(5) : ""
   );
@@ -149,39 +119,7 @@ export default function LegislativeStanceAreaHC({
     };
   }, [agreeSeries, repealSeries, disagreeSeries]);
 
-  // const options: Highcharts.Options = {
-  //   chart: {
-  //     type: "area",
-  //     height: 260,
-  //     backgroundColor: "transparent",
-  //   },
-  //   title: { text: undefined },
-  //   credits: { enabled: false },
-  //   xAxis: {
-  //     categories,
-  //     labels: { style: { color: "#475569", fontSize: "11px" } },
-  //   },
-  //   yAxis: {
-  //     min: 0,
-  //     max: 100,
-  //     tickInterval: 20,
-  //     labels: {
-  //       formatter: function () {
-  //         return `${Math.round(this.value as number)}%`;
-  //       },
-  //       style: { color: "#475569", fontSize: "11px" },
-  //     },
-  //   },
-  //   legend: { align: "right", verticalAlign: "top" },
-  //   plotOptions: {
-  //     area: { stacking: "percent", marker: { enabled: false } },
-  //   },
-  //   series: [
-  //     { type: "area", name: "현상유지", color: COLORS.disagree, data: disagreeSeries },
-  //     { type: "area", name: "폐지완화", color: COLORS.repeal, data: repealSeries },
-  //     { type: "area", name: "개정강화", color: COLORS.agree, data: agreeSeries },
-  //   ],
-  // };
+  
   const options: Highcharts.Options = {
   chart: {
     type: "area",
@@ -210,7 +148,7 @@ export default function LegislativeStanceAreaHC({
     area: {
       stacking: "percent",
       marker: { enabled: false },
-      lineColor: "rgba(0,0,0,0.05)", // 얇은 라인으로 입체감
+      lineColor: "rgba(0,0,0,0.05)", 
       lineWidth: 1,
       shadow: {
         color: "rgba(0,0,0,0.25)",
@@ -226,7 +164,7 @@ export default function LegislativeStanceAreaHC({
       },
     },
   },
-  // ✅ 3️⃣ series에 gradient 색상 적용
+
   series: [
     {
       type: "area",
@@ -289,7 +227,7 @@ export default function LegislativeStanceAreaHC({
             })}
           </div>
 
-          {/* ✅ 핵심 인사이트 요약 */}
+         
           <div className="mt-1 text-center text-[13px] text-neutral-600 font-medium bg-white/60 backdrop-blur rounded-lg px-4 py-2 border border-neutral-200">
             {(() => {
               const entries = [

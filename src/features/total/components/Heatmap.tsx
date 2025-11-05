@@ -4,9 +4,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 
-/* =========================
-   타입 정의
-========================= */
 type LawDatum = {
   name: string;
   개정강화: number;
@@ -14,23 +11,16 @@ type LawDatum = {
   현상유지: number;
 };
 type ApiResp = { laws: LawDatum[] };
-
-const COLS = ["개정강화", "폐지완화", "현상유지"] as const;
 type BucketKey = (typeof COLS)[number];
 
-/* =========================
-   날짜 계산 유틸
-========================= */
+const COLS = ["개정강화", "폐지완화", "현상유지"] as const;
 const fmtKstDate = (d: Date) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(d);
-
 const getDefaultRange = () => {
   const end = new Date("2025-08-13T23:59:59+09:00");
   const start = new Date(end.getTime() - 13 * 24 * 60 * 60 * 1000); // 14일 포함
   return { start: fmtKstDate(start), end: fmtKstDate(end) };
 };
-
-
 const Y_AXIS_LABEL_MAP: Record<string, string> = {
   "자본시장법,특정금융정보법,전자금융거래법,전자증권법,금융소비자보호법": "금융관련법",
   "개인정보보호법,정보통신망법": "개인정보관련법",
@@ -38,9 +28,6 @@ const Y_AXIS_LABEL_MAP: Record<string, string> = {
   "아동복지법": "아동복지법",
 };
 
-/* =========================
-   메인 컴포넌트
-========================= */
 export default function Heatmap({
   startDate,
   endDate,
@@ -53,15 +40,11 @@ export default function Heatmap({
   const [laws, setLaws] = useState<LawDatum[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ start, end를 외부 props 기반으로 결정
   const { start, end } = useMemo(() => {
     if (startDate && endDate) return { start: startDate, end: endDate };
     return getDefaultRange();
   }, [startDate, endDate]);
 
-  /* =========================
-     Highcharts heatmap 모듈 로드
-  ========================== */
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -81,9 +64,6 @@ export default function Heatmap({
     };
   }, []);
 
-  /* =========================
-     서버 데이터 패치
-  ========================== */
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -105,7 +85,7 @@ export default function Heatmap({
         console.log("data", data)
       } catch (err: any) {
         if (!cancelled) {
-          console.error("❌ Heatmap fetch 실패:", err);
+          console.error("Heatmap fetch 실패:", err);
           setFetchErr(err?.message || "Failed to fetch");
         }
       } finally {
@@ -118,9 +98,7 @@ export default function Heatmap({
     };
   }, [start, end]);
 
-  /* =========================
-     데이터 정규화 + 인사이트 계산
-  ========================== */
+
   const { rows, points, insightText } = useMemo(() => {
     if (!laws.length)
       return { rows: [], points: [], insightText: "데이터가 없습니다." };
@@ -180,9 +158,6 @@ export default function Heatmap({
     return { rows, points, insightText };
   }, [laws]);
 
-  /* =========================
-     Highcharts 옵션
-  ========================== */
   const options: Highcharts.Options = useMemo(
     () => ({
       chart: {
@@ -276,9 +251,6 @@ export default function Heatmap({
     [rows, points]
   );
 
-  /* =========================
-     렌더링
-  ========================== */
   if (!hcReady)
     return (
       <div className="w-full h-full grid place-items-center text-neutral-400">

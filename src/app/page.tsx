@@ -1,9 +1,8 @@
 "use client";
-import { useState, useMemo } from "react";
-import dynamic from "next/dynamic";
 
 import type { PeriodKey } from "@/shared/types/common";
-
+import { useState, useMemo } from "react";
+import dynamic from "next/dynamic";
 import Remote from "@/shared/layout/Remote";
 import BackgroundGradient from "@/shared/layout/BackgroundGradient";
 import Nav from "@/shared/layout/Nav";
@@ -11,7 +10,7 @@ import LegalTop5 from "@/features/total/components/LegalTop5";
 import SocialBarChart from "@/features/total/components/SocailBarChart";
 import KpiSummary from "@/features/total/components/KpiSummary";
 
-/** 클라이언트 전용 컴포넌트는 동적 임포트 + ssr:false */
+
 const NetworkGraphContainer = dynamic(
   () => import("@/features/total/components/NetworkGraphContainer"),
   {
@@ -19,7 +18,6 @@ const NetworkGraphContainer = dynamic(
     loading: () => <div className="h-[600px] grid place-items-center text-neutral-400">Loading…</div>,
   }
 );
-
 
 const LegislativeStanceArea = dynamic(
   () => import("@/features/total/components/LegislativeStanceArea"),
@@ -31,7 +29,6 @@ const Heatmap = dynamic(
   { ssr: false, loading: () => <div className="h-[340px] grid place-items-center text-neutral-400">Loading…</div> }
 );
 
-/** 공통 카드 */
 function ChartCard({
   title,
   children,
@@ -150,7 +147,7 @@ export default function Dashboard() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
                       </svg>
 
-                      {/* Tooltip */}
+                    
                       <div className="absolute top-6 left-0 z-10 hidden group-hover:block w-[260px] text-[11px] text-neutral-800 bg-white border border-neutral-200 shadow-md rounded-md p-3">
                         이 네트워크는 주요 법안 간 연관성과 언급량 기반으로 시각화됩니다.
                         <br />
@@ -190,7 +187,6 @@ export default function Dashboard() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
                     </svg>
 
-                    {/* Tooltip */}
                     <div className="absolute top-6 left-0 z-10 hidden group-hover:block w-[240px] text-[11px] text-neutral-800 bg-white border border-neutral-200 shadow-md rounded-md p-3">
                       각 법안에 대한 국민 여론(개정 강화, 폐지 완화, 현상 유지) 분포를 시각화한 차트입니다.
                       <br />
@@ -206,7 +202,7 @@ export default function Dashboard() {
               </ChartCard>
 
               <div className="grid grid-rows-2 gap-6 h-full w-full">
-                {/* 여론 성향 추이 (스택) */}
+                {/* 여론 성향 추이 */}
                 <ChartCard
                   title={
                     <div className="flex items-center gap-1 relative group">
@@ -238,11 +234,11 @@ export default function Dashboard() {
                   </div>
                 </ChartCard>
 
-                {/* 분야별 히트맵 */}
+                {/* 히트맵 */}
                 <ChartCard
                   title={
                     <div className="flex items-center gap-1 relative group">
-                      <span>분야별 히트맵</span>
+                      <span>법안별 여론성향 히트맵</span>
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-4 w-4 text-neutral-400 cursor-pointer group-hover:text-neutral-600 transition"

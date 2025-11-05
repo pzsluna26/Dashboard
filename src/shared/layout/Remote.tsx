@@ -3,22 +3,19 @@
 import Link from "next/link";
 import { useMemo, useState, useEffect, type RefObject } from "react";
 import { usePathname } from "next/navigation";
-
-// 📅 DayPicker
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { addDays, differenceInCalendarDays, format, isAfter } from "date-fns";
 
 type Props = {
-  startDate?: string; // YYYY-MM-DD
-  endDate?: string;   // YYYY-MM-DD
+  startDate?: string; 
+  endDate?: string;   
   onDateRangeChange?: (start: string, end: string) => void;
-  captureRef?: RefObject<HTMLElement | null>; // 캡처 대상 (없으면 document.body)
+  captureRef?: RefObject<HTMLElement | null>; 
   className?: string;
   // fixed?:boolean;
 };
 
-// 색/스타일 토큰
 const BTN_TEXT = "#1f2937";
 const BTN_GRAD        = "linear-gradient(180deg, #c6d1d6 0%, #b4c4cb 45%, #9fb3be 100%)";
 const BTN_GRAD_HOVER  = "linear-gradient(180deg, #94b7c6 0%, #7fa2b2 45%, #6f8f9e 100%)";
@@ -31,9 +28,8 @@ const BTN_SHADOW_ACTIVE = "0 6px 14px rgba(60,85,100,0.32), 0 2px 6px rgba(60,85
 
 const MAX_RANGE_DAYS = 30;
 
-// ✅ 2025-01-01 ~ 2025-08-13 로 범위 고정
-const MIN_DATE = new Date(2025, 0, 1);  // 2025-01-01
-const MAX_DATE = new Date(2025, 7, 13); // 2025-08-13
+const MIN_DATE = new Date(2025, 0, 1);  
+const MAX_DATE = new Date(2025, 7, 13); 
 
 // ✅ 라우트 버튼
 const routes = [
@@ -48,7 +44,6 @@ function toYMD(d: Date) {
   return format(d, "yyyy-MM-dd");
 }
 
-// 범위 밖 날짜 클램프
 function clampDate(d?: Date) {
   if (!d) return undefined;
   if (d < MIN_DATE) return MIN_DATE;
@@ -67,7 +62,6 @@ export default function Remote({
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  // DayPicker range 상태 (초기값을 2025-01~10 범위로 클램프)
   const [range, setRange] = useState<{ from?: Date; to?: Date }>(() => ({
     from: clampDate(startDate ? new Date(startDate) : undefined),
     to: clampDate(endDate ? new Date(endDate) : undefined),
@@ -80,7 +74,6 @@ export default function Remote({
 
   const isInvalid = !!range.from && !!range.to && daySpan > MAX_RANGE_DAYS;
 
-  // 시작일 선택 후 30일 초과 날짜 클릭 불가
   const disabledMatchers = useMemo(() => {
     const matchers: any[] = [
       (d: Date) => d < MIN_DATE || d > MAX_DATE,
@@ -92,14 +85,14 @@ export default function Remote({
     return matchers;
   }, [range.from, range.to]);
 
-  // DayPicker 선택
+
   const handleSelect = (selected: { from?: Date; to?: Date } | undefined) => {
     if (!selected) return setRange({});
     const { from, to } = selected;
     if (!from) return setRange({});
     if (!to) return setRange({ from });
 
-    // 만약 외부에서 강제로 범위 밖이 들어오면 무시 (안전망)
+
     if (from < MIN_DATE || to > MAX_DATE) return;
 
     const span = differenceInCalendarDays(to, from) + 1;
@@ -115,7 +108,6 @@ export default function Remote({
 
   const handleReset = () => setRange({});
 
-  // ESC로 닫기
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
@@ -123,20 +115,14 @@ export default function Remote({
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  // -------- 캡처/다운로드 유틸 --------
-  // html2canvas가 CSS Color 4(예: lab())를 파싱하지 못해 실패하는 경우가 있어
-  // 기본은 html-to-image로 캡처하고, 실패 시 html2canvas로 폴백합니다.
   async function captureNodeToCanvas(target: HTMLElement) {
-    // 캔버스 최대 치수(브라우저에 따라 16384~32767 제한). 보수적으로 16384 사용
     const MAX_DIM = 16384;
     const nodeW = target.scrollWidth || target.clientWidth || target.offsetWidth;
     const nodeH = target.scrollHeight || target.clientHeight || target.offsetHeight;
 
-    // 과도한 픽셀 크기로 잘리는 문제 방지: 안전 픽셀 비율 계산
     const baseRatio = window.devicePixelRatio > 1 ? 2 : 1.5;
     const safeRatio = Math.min(baseRatio, MAX_DIM / Math.max(nodeW, nodeH));
 
-    // 캡처에서 제외하고 싶은 요소는 data-capture-skip 속성을 달아주세요
     const filter = (el: Element) => !(el as HTMLElement).dataset?.captureSkip;
 
     try {
@@ -144,7 +130,7 @@ export default function Remote({
       const canvas = await htmlToImage.toCanvas(target, {
         cacheBust: true,
         pixelRatio: safeRatio,
-        backgroundColor: "#ffffff", // PDF에서 투명 배경이 검게 보이는 현상 방지
+        backgroundColor: "#ffffff", 
         width: nodeW,
         height: nodeH,
         style: { transform: "none", transformOrigin: "top left" },
@@ -166,7 +152,7 @@ export default function Remote({
         scrollX: 0,
         scrollY: -window.scrollY,
         onclone: (doc) => {
-          // lab()/color() 등을 가진 요소 보정
+        
           const all = Array.from(doc.querySelectorAll<HTMLElement>("*"));
           for (const el of all) {
             if ((el as any).dataset?.captureSkip) {
@@ -184,10 +170,10 @@ export default function Remote({
             if (/lab\(/i.test(color) || /color\(/i.test(color)) {
               el.style.color = color;
             }
-            // fixed/sticky 요소가 잘리는 경우 임시로 static 처리
+         
             const pos = cs.getPropertyValue("position");
             if (pos === "fixed") {
-              el.style.position = "absolute"; // 화면 기준 → 문서 기준으로 변경
+              el.style.position = "absolute"; 
             }
           }
         },
@@ -215,7 +201,7 @@ export default function Remote({
       const canvas = await captureNodeToCanvas(target as HTMLElement);
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
 
-      // ✅ jspdf 안전 임포트 (named | default 모두 대응)
+      
       const jspdfMod: any = await import("jspdf");
       const JsPDF = jspdfMod.jsPDF || jspdfMod.default;
       if (!JsPDF) throw new Error("jsPDF export not found");
@@ -235,7 +221,7 @@ export default function Remote({
         pdf.addImage(imgData, "JPEG", 0, 0, finalW, finalH);
       } else {
         let y = 0;
-        const pagePx = pageH / 0.264583 / scale; // mm -> px -> 스케일 보정
+        const pagePx = pageH / 0.264583 / scale;
         while (y < canvas.height) {
           const slice = document.createElement("canvas");
           slice.width = canvas.width;
@@ -250,12 +236,12 @@ export default function Remote({
         }
       }
 
-      // 저장 시도 (중첩 try/catch 제거)
+   
       let saved = false;
       try {
         pdf.save(`dashboard_${new Date().toISOString().slice(0,19).replace(/[:T]/g, "-")}.pdf`);
         saved = true;
-      } catch (_e) {/* noop */}
+      } catch (_e) 
       if (!saved) {
         const blobUrl = pdf.output("bloburl");
         window.open(blobUrl, "_blank");
@@ -281,7 +267,7 @@ export default function Remote({
       ].join(" ")}
       aria-label="빠른 탐색 리모컨"
     >
-      {/* 네비게이션 버튼들 */}
+   
       {routes.map((r) => {
         const Active = pathname === r.href;
         const Icon = r.icon;
@@ -340,10 +326,10 @@ export default function Remote({
         );
       })}
 
-      {/* 구분선 */}
+   
       <div className="w-8 h-px bg-[rgba(255,255,255,0.70)] my-1" />
 
-      {/* 기간선택 토글 */}
+    
       <button
         type="button"
         className="w-16 h-16 rounded-2xl grid place-items-center transition-transform duration-150 focus:outline-none"
@@ -374,7 +360,6 @@ export default function Remote({
         </div>
       </button>
 
-      {/* PDF 저장 */}
       <button
         type="button"
         className="w-16 h-16 rounded-2xl grid place-items-center transition-transform duration-150 focus:outline-none"
@@ -415,7 +400,7 @@ export default function Remote({
         </div>
       </button>
 
-      {/* 전체 캡처(PNG) */}
+    
       <button
         type="button"
         className="w-16 h-16 rounded-2xl grid place-items-center transition-transform duration-150 focus:outline-none"
@@ -456,7 +441,6 @@ export default function Remote({
         </div>
       </button>
 
-      {/* 조회기간 패널 */}
       {open && (
         <div
           id="remote-date-panel"
@@ -464,7 +448,7 @@ export default function Remote({
                      bg-[rgba(255,255,255,0.90)] backdrop-blur-md shadow-[0_12px_40px_rgba(20,30,60,0.2)]
                      border border-[rgba(255,255,255,0.60)] overflow-hidden"
         >
-          {/* 닫기 버튼 */}
+     
           <button
             type="button"
             aria-label="닫기"
@@ -486,14 +470,14 @@ export default function Remote({
               numberOfMonths={1}
               disabled={disabledMatchers}
 
-              // ▼ 연/월 선택 드롭다운 (2025년 고정)
+              
               captionLayout="dropdown"
               fromYear={2025}
               toYear={2025}
-              fromMonth={new Date(2025, 0)} // 2025-01
-              toMonth={new Date(2025, 7)}   // 2025-08
+              fromMonth={new Date(2025, 0)} 
+              toMonth={new Date(2025, 7)}   
 
-              // 강조 스타일(상태 클래스)
+              
               modifiersClassNames={{
                 selected: "bg-[#7fa2b2] text-white",
                 range_start: "bg-[#7fa2b2] text-white",
@@ -502,13 +486,12 @@ export default function Remote({
                 today: "border border-[#7fa2b2]",
               }}
 
-              // 오버플로우 방지 + 캡션/셀 스타일
               styles={{
                 root: {
                   width: "100%",
                   maxWidth: "100%",
                   boxSizing: "border-box",
-                  ["--rdp-cell-size" as any]: "34px", // 셀 크기 축소
+                  ["--rdp-cell-size" as any]: "34px", 
                 },
                 months: { width: "100%", margin: 0 },
                 month: { width: "100%" },
@@ -568,7 +551,6 @@ export default function Remote({
   );
 }
 
-/* ================== 아이콘 (SVG) ================== */
 function HomeIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -576,34 +558,34 @@ function HomeIcon() {
     </svg>
   );
 }
-function DashboardIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z" />
-    </svg>
-  );
-}
-function NewsIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M4 4h16v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM7 7h10v2H7zm0 4h10v2H7zm0 4h6v2H7z" />
-    </svg>
-  );
-}
-function SentimentIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zM8 10a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm8 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM7.5 15h9a4.5 4.5 0 0 1-9 0z" />
-    </svg>
-  );
-}
-function LawIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M5 4h14v2H5zM6 7h12l2 4H4zM6 12h12v8H6z" />
-    </svg>
-  );
-}
+// function DashboardIcon() {
+//   return (
+//     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+//       <path d="M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z" />
+//     </svg>
+//   );
+// }
+// function NewsIcon() {
+//   return (
+//     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+//       <path d="M4 4h16v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM7 7h10v2H7zm0 4h10v2H7zm0 4h6v2H7z" />
+//     </svg>
+//   );
+// }
+// function SentimentIcon() {
+//   return (
+//     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+//       <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zM8 10a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm8 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM7.5 15h9a4.5 4.5 0 0 1-9 0z" />
+//     </svg>
+//   );
+// }
+// function LawIcon() {
+//   return (
+//     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+//       <path d="M5 4h14v2H5zM6 7h12l2 4H4zM6 12h12v8H6z" />
+//     </svg>
+//   );
+// }
 function CalendarIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>

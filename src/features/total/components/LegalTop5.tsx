@@ -17,17 +17,16 @@ export interface LegalTop5Props {
   onClickDetail?: (legal: string) => void;
 }
 
-// ✅ KST 기준 YYYY-MM-DD 포맷
 const fmtKstDate = (d: Date) =>
-  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(d); // YYYY-MM-DD
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(d); 
 
-// ✅ 고정 종료일 기준으로 최근 14일 계산
+
 const getDefaultRange = () => {
   const end = new Date("2025-08-13T23:59:59+09:00");
-  const start = new Date(end.getTime() - 13 * 24 * 60 * 60 * 1000); // 14일간 포함되도록 -13
+  const start = new Date(end.getTime() - 13 * 24 * 60 * 60 * 1000); 
   return {
-    start: fmtKstDate(start), // ex: 2025-07-31
-    end: fmtKstDate(end),     // ex: 2025-08-13
+    start: fmtKstDate(start), 
+    end: fmtKstDate(end),    
   };
 };
 
@@ -40,7 +39,7 @@ export default function LegalTop5({
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(0);
 
-  // ✅ 실제 조회할 날짜 계산
+
   const { start, end } = useMemo(() => {
     if (startDate && endDate) {
       return { start: startDate, end: endDate };
@@ -48,7 +47,6 @@ export default function LegalTop5({
     return getDefaultRange();
   }, [startDate, endDate]);
 
-  // ✅ API 호출
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -62,7 +60,7 @@ export default function LegalTop5({
         setItems(list);
         console.log("랭킹패치", raw)
       } catch (err) {
-        console.error("❌ Failed to fetch LegalTop5:", err);
+        console.error("Failed to fetch LegalTop5:", err);
       } finally {
         setLoading(false);
       }
@@ -71,12 +69,12 @@ export default function LegalTop5({
     fetchData();
   }, [start, end]);
 
-  // 댓글 수 기준 상위 3개 추출
+
   const topItems = useMemo(() => {
     return [...items].sort((a, b) => b.commentCount - a.commentCount).slice(0, 5);
   }, [items]);
 
-  // 자동 슬라이드
+ 
   useEffect(() => {
     if (!topItems.length) return;
     setActive(0);
@@ -120,11 +118,9 @@ export default function LegalTop5({
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
           </svg>
 
-          {/* Tooltip */}
           <div className="absolute top-6 left-0 z-10 hidden group-hover:block w-[260px] text-[11px] text-neutral-800 bg-white border border-neutral-200 shadow-md rounded-md p-3">
             댓글 수 기준으로 가장 많은 입법 의견이 집중된 법안 TOP {topItems.length}입니다.
             <br />
-            <span className="text-[10px] text-neutral-500">(자동 순환 강조됨)</span>
           </div>
         </div>
 

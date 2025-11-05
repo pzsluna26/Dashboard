@@ -40,13 +40,13 @@ const CATEGORY_TITLE: Record<string, string> = {
 
 const nf = new Intl.NumberFormat("ko-KR");
 
-// --- KST(Asia/Seoul) 기준 YYYY-MM-DD 유틸 ---
-const fmtKstDate = (d: Date) =>
-  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(d); // 'YYYY-MM-DD'
 
-// 고정된 마지막 날짜(2025-08-13) 기준 최근 14일 계산
+const fmtKstDate = (d: Date) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(d); 
+
+
 const makeDefaultRange = (days = 14) => {
-  const end = new Date("2025-08-13T23:59:59+09:00"); // KST 기준 고정
+  const end = new Date("2025-08-13T23:59:59+09:00"); 
   const start = new Date(end.getTime() - days * 24 * 60 * 60 * 1000);
   return {
     start: fmtKstDate(start),
@@ -82,8 +82,8 @@ function TooltipContent({ active, payload, label, catLabel }: any) {
 }
 
 type Props = {
-  startDate?: string; // YYYY-MM-DD
-  endDate?: string;   // YYYY-MM-DD
+  startDate?: string; 
+  endDate?: string;   
   period?: PeriodKey;
 };
 
@@ -97,10 +97,10 @@ export default function KpiSummary({
   const [error, setError] = useState<string | null>(null);
   const [showRaw, setShowRaw] = useState<boolean>(false);
 
-  // --- 필수 파라미터를 항상 포함하도록 보장 ---
+ 
   const apiUrl = useMemo(() => {
     const base = "http://10.125.121.213:8080/api/dashboard/kpi-summary";
-    const defaults = makeDefaultRange(14); // ✅ 최근 14일
+    const defaults = makeDefaultRange(14); 
 
     const s = (startDate && startDate.trim()) || defaults.start;
     const e = (endDate && endDate.trim()) || defaults.end;
@@ -269,44 +269,52 @@ export default function KpiSummary({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <span className="text-sm text-gray-600">종합 KPI 요약</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4 text-neutral-400 cursor-pointer group-hover:text-neutral-600 transition"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"
-            />
-          </svg>
-
-          {/* 툴팁 */}
-          <div className="absolute top-6 left-0 z-10 hidden group-hover:block w-[260px] text-[11px] text-neutral-800 bg-white border border-neutral-200 shadow-md rounded-md p-3">
-            최근 기간 동안의 전체 의견 건수를 요약한 지표입니다.
-            <br />
-            의견 변화 추세, 여론 성향 분포 등을 종합적으로 보여줍니다.
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm text-gray-600">종합 KPI 요약</span>
+            <div className="relative group">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 text-neutral-400 cursor-pointer group-hover:text-neutral-600 transition"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"
+                />
+              </svg>
+              <div className="absolute top-6 left-0 z-10 hidden group-hover:block w-[260px] text-[11px] text-neutral-800 bg-white border border-neutral-200 shadow-md rounded-md p-3">
+                최근 기간 동안의 전체 의견 건수를 요약한 지표입니다.
+                <br />
+                의견 변화 추세, 여론 성향 분포 등을 종합적으로 보여줍니다.
+              </div>
+            </div>
           </div>
+
         </div>
-        <button
-          onClick={() => setShowRaw((v) => !v)}
-          className="text-xs px-3 py-1.5 rounded-lg border border-neutral-300 bg-white/70 hover:bg-white transition"
-          title="API에서 받은 전체 JSON 보기"
-        >
-          {showRaw ? "Raw JSON 닫기" : "Raw JSON 보기"}
-        </button>
-        {showRaw && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={handleDownload}
-            className="ml-2 text-xs px-3 py-1.5 rounded-lg border border-neutral-300 bg-white/70 hover:bg-white transition"
-            title="JSON 파일로 다운로드"
+            onClick={() => setShowRaw((v) => !v)}
+            className="text-xs px-3 py-1.5 rounded-lg border border-neutral-300 bg-white/70 hover:bg-white transition"
+            title="API에서 받은 전체 JSON 보기"
           >
-            JSON 다운로드
+            {showRaw ? "Raw JSON 닫기" : "Raw JSON 보기"}
           </button>
-        )}
+
+          {showRaw && (
+            <button
+              onClick={handleDownload}
+              className="text-xs px-3 py-1.5 rounded-lg border border-neutral-300 bg-white/70 hover:bg-white transition"
+              title="JSON 파일로 다운로드"
+            >
+              JSON 다운로드
+            </button>
+          )}
+        </div>
+
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">

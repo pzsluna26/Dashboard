@@ -9,12 +9,12 @@ interface NavbarProps {
   showSearch?: boolean;
 }
 
-const categoryList = [
-  { key: "privacy", name: "개인정보보호법" },
-  { key: "child", name: "아동복지법" },
-  { key: "safety", name: "중대재해처벌법" },
-  { key: "finance", name: "자본시장법" },
-];
+// const categoryList = [
+//   { key: "privacy", name: "개인정보보호법" },
+//   { key: "child", name: "아동복지법" },
+//   { key: "safety", name: "중대재해처벌법" },
+//   { key: "finance", name: "자본시장법" },
+// ];
 
 export default function Nav({
   title,
@@ -49,20 +49,17 @@ export default function Nav({
   return (
     <div
       className="relative z-50"
-      onMouseLeave={() => setActiveTab(null)} // ✅ Nav 전체에서 마우스 빠지면 닫힘
+      onMouseLeave={() => setActiveTab(null)} 
     >
-      {/* ✅ Nav Bar */}
+   
       <nav
         className="fixed top-0 left-0 w-full h-[60px] bg-gray-900/10 flex justify-center shadow z-50 overflow-visible backdrop-blur-md"
-        onMouseEnter={() => {}} // hover 유지
+        onMouseEnter={() => {}}
       >
         <div className="relative w-full h-full flex items-center px-6">
-          {/* 좌측: 로고 */}
           <div className="absolute left-6 flex items-center">
             <img src="/icons/logo.png" alt="Logo" className="h-30 object-contain" />
           </div>
-
-          {/* 중앙: 메뉴 */}
           <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-10">
             <Link
               href="/"
@@ -104,7 +101,7 @@ export default function Nav({
             </button> */}
           </div>
 
-          {/* 우측: 검색 + 로그인 */}
+          
           <div className="absolute right-6 flex items-center space-x-4">
             {showSearch && (
               <form onSubmit={handleSearch} className="relative">
@@ -160,7 +157,7 @@ export default function Nav({
         </div>
       </nav>
 
-      {/* ✅ 드롭다운: hover 유지됨 */}
+      
       {activeTab === "news" && (
         <div
           className="fixed top-[60px] left-0 w-screen bg-white/80 border-t border-gray-200 shadow backdrop-blur-md z-40 transition-all duration-300 ease-in-out"
@@ -201,7 +198,7 @@ export default function Nav({
         </div>
       )}
 
-      {/* ✅ 선택 경로 표시 */}
+  
       {selectedPath && (
         <div className="fixed top-[150px] right-8 text-sm text-gray-600 z-40 px-3 py-1 bg-white/80 rounded shadow">
           {selectedPath}

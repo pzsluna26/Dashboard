@@ -13,16 +13,14 @@ interface HalfPieChartProps {
 }
 
 const COLORS = {
-  agree: "#f59c9cff", // 개정강화
-  repeal: "#9abdf7ff", // 폐지완화
-  disagree: "#94a3b8", // 현상유지
+  agree: "#f59c9cff", 
+  repeal: "#9abdf7ff", 
+  disagree: "#94a3b8", 
 };
 
 export default function HalfPieChart({ data, onSelect, activeKey }: HalfPieChartProps) {
-  // 유효 데이터 (0값은 제외)
-  const visibleData = data.filter((d) => d.value > 0);
 
-  // 클릭된 조각의 label
+  const visibleData = data.filter((d) => d.value > 0);
   const activeLabel = data.find((d) => d.key === activeKey)?.label ?? "";
 
   return (
@@ -39,7 +37,7 @@ export default function HalfPieChart({ data, onSelect, activeKey }: HalfPieChart
           paddingAngle={0}
           dataKey="value"
           isAnimationActive={true}
-          onClick={(entry) => onSelect(entry.key)} // ✅ slice 클릭 시 onSelect 호출
+          onClick={(entry) => onSelect(entry.key)} 
         >
           {visibleData.map((entry) => (
             <Cell
@@ -55,12 +53,12 @@ export default function HalfPieChart({ data, onSelect, activeKey }: HalfPieChart
         <Tooltip formatter={(val: number, name) => [`${val}건`, name]} labelFormatter={() => ""} />
       </PieChart>
 
-      {/* ✅ 중앙에 클릭된 조각의 label 표시 */}
+  
       {activeLabel && (
         <div
           className="absolute text-sm font-semibold text-neutral-700 select-none pointer-events-none"
           style={{
-            top: "100px", // 반원 중심 근처 위치
+            top: "100px", 
             left: "52%",
             transform: "translateX(-50%)",
           }}
@@ -69,7 +67,6 @@ export default function HalfPieChart({ data, onSelect, activeKey }: HalfPieChart
         </div>
       )}
 
-      {/* 범례 */}
       <div className="flex justify-center gap-4 text-xs mt-1">
         {data.map((d) => (
           <div

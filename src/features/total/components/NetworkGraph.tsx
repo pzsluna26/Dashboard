@@ -269,40 +269,30 @@ export default function NetworkGraph({
             onNodeClick={(n) => setSelected(n as any)}
             onEngineTick={() => repelFromLegal(0.3, graph.nodes as BaseNode[])}
             nodeCanvasObject={(node, ctx) => {
-  const n = node as LegalNode | IncidentNode;
-  ctx.font = `${n.type === "legal" ? 12 : 11}px Inter`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
+              const n = node as LegalNode | IncidentNode;
+              ctx.font = `${n.type === "legal" ? 12 : 11}px Inter`;
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
 
-  const radius = n.type === "incident" ? sizeScale((n as IncidentNode).count) : 30;
+              const radius = n.type === "incident" ? sizeScale((n as IncidentNode).count) : 30;
 
-  // 배경 색상 설정
-  ctx.fillStyle = n.type === "legal" ? "#9fc0f5ff" : "#94a3b875";
-  ctx.beginPath();
-  ctx.arc(n.x!, n.y!, radius, 0, 2 * Math.PI);
-  ctx.fill();
+              ctx.fillStyle = n.type === "legal" ? "#9fc0f5ff" : "#94a3b875";
+              ctx.beginPath();
+              ctx.arc(n.x!, n.y!, radius, 0, 2 * Math.PI);
+              ctx.fill();
 
-  // // 테두리
-  // ctx.strokeStyle = "#213547";
-  // ctx.lineWidth = 1.5;
-  // ctx.stroke();
+              ctx.fillStyle = "#374151";
+              ctx.fillText(n.label ?? "", n.x!, n.y!);
+            }}
+            nodePointerAreaPaint={(node, color, ctx) => {
+              const n = node as LegalNode | IncidentNode;
+              const radius = n.type === "incident" ? sizeScale((n as IncidentNode).count) + 2 : 32;
 
-  // 텍스트
-  ctx.fillStyle = "#374151"; // Tailwind text-neutral-700
-ctx.fillText(n.label ?? "", n.x!, n.y!);
-
-}}
-
-nodePointerAreaPaint={(node, color, ctx) => {
-  const n = node as LegalNode | IncidentNode;
-  const radius = n.type === "incident" ? sizeScale((n as IncidentNode).count) + 2 : 32;
-
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.arc(n.x!, n.y!, radius, 0, 2 * Math.PI);
-  ctx.fill();
-}}
-
+              ctx.fillStyle = color;
+              ctx.beginPath();
+              ctx.arc(n.x!, n.y!, radius, 0, 2 * Math.PI);
+              ctx.fill();
+            }}
             minZoom={0.3}
             maxZoom={2}
           />
@@ -332,7 +322,7 @@ nodePointerAreaPaint={(node, color, ctx) => {
             <div className="text-neutral-500 text-xs">Incident</div>
             <div className="text-base font-semibold">{selIncident?.label}</div>
 
-            {/* ✅ 반원 차트 삽입 */}
+       
             <HalfPieChart
               data={[
                 { key: "agree", label: "개정강화", value: tabMeta.agree.getCount(selIncident) },
