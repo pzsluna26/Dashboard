@@ -11,28 +11,34 @@ import HighchartsReact from "highcharts-react-official";
 // };
 
 const COLORS = {
-  disagree: {
-    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-    stops: [
-      [0, "#FFD6C0"], // 상단 밝은색
-      [1, "#FFB4A2"], // 하단 진한색
-    ],
-  },
-  repeal: {
-    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-    stops: [
-      [0, "#D3FAD6"],
-      [1, "#9CD8A1"],
-    ],
-  },
-  agree: {
-    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-    stops: [
-      [0, "#E0F2F7"],
-      [1, "#A4C8D8"],
-    ],
-  },
+  disagree: "#ffcdb2d7",
+  repeal: "#9abef78f",
+  agree: "#94a3b8c0",
 };
+
+// const COLORS = {
+//   disagree: {
+//     linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+//     stops: [
+//       [0, "#FFD6C0"], // 상단 밝은색
+//       [1, "#e07b7ba9"], // 하단 진한색
+//     ],
+//   },
+//   repeal: {
+//     linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+//     stops: [
+//       [0, "#d7e6fdf5"],
+//       [1, "#90b6f1ff"],
+//     ],
+//   },
+//   agree: {
+//     linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+//     stops: [
+//       [0, "#c5d3e76c"],
+//       [1, "#9da0a5ff"],
+//     ],
+//   },
+// };
 
 type RawPoint = {
   date: string;

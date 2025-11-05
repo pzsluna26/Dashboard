@@ -187,7 +187,7 @@ export default function Heatmap({
     () => ({
       chart: {
         type: "heatmap",
-        height: 220,
+        height: 290,
         backgroundColor: "transparent",
         spacing: [10, 10, 10, 10],
         style: { fontFamily: "ui-sans-serif, system-ui, -apple-system" },
@@ -308,7 +308,7 @@ export default function Heatmap({
     );
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full h-[340px] flex flex-col">
       <div className="rounded-2xl bg-white/55 backdrop-blur-md border border-white/60 ">
         <HighchartsReact highcharts={Highcharts} options={options} immutable />
       </div>

@@ -6,8 +6,8 @@ import HighchartsReact from "highcharts-react-official";
 
 const COLORS = {
   disagree: "#FFCDB2",
-  repeal: "#ACE1AF",
-  agree: "#C7D9DD",
+  repeal: "#9abdf7ff",
+  agree: "#94a3b8",
 };
 
 type RawPoint = {

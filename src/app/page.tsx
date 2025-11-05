@@ -28,7 +28,7 @@ const LegislativeStanceArea = dynamic(
 
 const Heatmap = dynamic(
   () => import("@/features/total/components/Heatmap"),
-  { ssr: false, loading: () => <div className="h-[330px] grid place-items-center text-neutral-400">Loading…</div> }
+  { ssr: false, loading: () => <div className="h-[340px] grid place-items-center text-neutral-400">Loading…</div> }
 );
 
 /** 공통 카드 */
@@ -64,7 +64,7 @@ export default function Dashboard() {
 
   const displayPeriod = useMemo(() => {
     if (startDate && endDate) return `${formatKR(startDate)} ~ ${formatKR(endDate)}`;
-    return "기간 미선택 (좌측 ‘기간선택’에서 최대 14일 범위를 지정하세요)";
+    return "기간 미선택 (처음 화면은 최근 14일 기준으로 분석됩니다)";
   }, [startDate, endDate]);
 
   const currentTitle = "종합분석";
@@ -79,6 +79,7 @@ export default function Dashboard() {
       />
 
       <Remote
+        fixed={false}
         startDate={startDate}
         endDate={endDate}
         onDateRangeChange={(s, e) => {

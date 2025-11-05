@@ -13,8 +13,8 @@ interface HalfPieChartProps {
 }
 
 const COLORS = {
-  agree: "#9abdf7ff", // 개정강화
-  repeal: "#a2c1ddff", // 폐지완화
+  agree: "#f59c9cff", // 개정강화
+  repeal: "#9abdf7ff", // 폐지완화
   disagree: "#94a3b8", // 현상유지
 };
 

@@ -277,20 +277,19 @@ export default function NetworkGraph({
   const radius = n.type === "incident" ? sizeScale((n as IncidentNode).count) : 30;
 
   // 배경 색상 설정
-  ctx.fillStyle = n.type === "legal" ? "#9fc0f5ff" : "#94a3b875";
+  ctx.fillStyle = n.type === "legal" ? "#9abdf7ff" : "#94a3b8";
   ctx.beginPath();
   ctx.arc(n.x!, n.y!, radius, 0, 2 * Math.PI);
   ctx.fill();
 
-  // // 테두리
-  // ctx.strokeStyle = "#213547";
-  // ctx.lineWidth = 1.5;
-  // ctx.stroke();
+  // 테두리
+  ctx.strokeStyle = "#213547";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
 
   // 텍스트
-  ctx.fillStyle = "#374151"; // Tailwind text-neutral-700
-ctx.fillText(n.label ?? "", n.x!, n.y!);
-
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(n.label ?? "", n.x!, n.y!);
 }}
 
 nodePointerAreaPaint={(node, color, ctx) => {

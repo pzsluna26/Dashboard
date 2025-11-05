@@ -15,6 +15,7 @@ type Props = {
   onDateRangeChange?: (start: string, end: string) => void;
   captureRef?: RefObject<HTMLElement | null>; // 캡처 대상 (없으면 document.body)
   className?: string;
+  // fixed?:boolean;
 };
 
 // 색/스타일 토큰
@@ -61,6 +62,7 @@ export default function Remote({
   onDateRangeChange,
   captureRef,
   className = "",
+  // fixed=true,
 }: Props) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -267,7 +269,9 @@ export default function Remote({
   return (
     <div
       className={[
+        // fixed? "fixed" : "absolute",
         "fixed left-6 top-1/2 -translate-y-1/2 z-[1000] pointer-events-auto",
+        "left-6 top-1/2 -translate-y-1/2 z-[1000] pointer-events-auto",
         "rounded-3xl shadow-[0_12px_40px_rgba(20,30,60,0.15)]",
         "backdrop-blur-md border border-white/50",
         "bg-[rgba(255,255,255,0.60)]",
