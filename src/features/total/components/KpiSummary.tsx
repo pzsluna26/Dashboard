@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 import { useKpiSummary } from '../hooks/useKpiSummary';
 import { CATEGORY_TITLE } from '@/shared/constants/mapping';

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { dashboardAPI } from '@/shared/api/dashboard';
-import { makeDefaultRange } from '@/shared/utils/date';
+import { useDateRange } from '@/shared/hooks/useDateRange';
 import type { LegalTop5Wire } from '@/shared/types/dashboard';
 
 export type LegalTop5Item = {
@@ -13,11 +13,8 @@ export type LegalTop5Item = {
 };
 
 export function useLegalTop5(startDate?: string, endDate?: string) {
-  const { start, end } = useMemo(() => {
-    if (startDate && endDate) return { start: startDate, end: endDate };
-    return makeDefaultRange(14);
-  }, [startDate, endDate]);
 
+  const { start, end } = useDateRange(startDate, endDate);
   const [items, setItems] = useState<LegalTop5Item[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string|null>(null);

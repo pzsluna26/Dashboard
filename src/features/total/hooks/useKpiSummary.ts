@@ -1,17 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { dashboardAPI } from '@/shared/api/dashboard';
 import { KPI_KEY_MAPPING } from '@/shared/constants/mapping';
-import { makeDefaultRange } from '@/shared/utils/date';
+import { useDateRange } from '@/shared/hooks/useDateRange';
 import type { PeriodKey } from '@/shared/types/common';
 import type { KpiSummaryWire } from '@/shared/types/dashboard';
 
 export function useKpiSummary(startDate?: string, endDate?: string, period: PeriodKey = 'weekly_timeline') {
   
-  const { start, end } = useMemo(() => {
-    if (startDate && endDate) return { start: startDate, end: endDate };
-    return makeDefaultRange(14);
-  }, [startDate, endDate]);
-
+  const { start, end } = useDateRange(startDate, endDate);
   const [data, setData] = useState<{
     [cat: string]: KpiSummaryWire[keyof KpiSummaryWire]
   } | null>(null);

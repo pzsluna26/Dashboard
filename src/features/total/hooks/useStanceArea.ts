@@ -1,14 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { dashboardAPI } from '@/shared/api/dashboard';
-import { makeDefaultRange } from '@/shared/utils/date';
+import { useDateRange } from '@/shared/hooks/useDateRange';
 import type { StanceAreaWire } from '@/shared/types/dashboard';
 
 export function useStanceArea(startDate?: string, endDate?: string) {
-  const { start, end } = useMemo(() => {
-    if (startDate && endDate) return { start: startDate, end: endDate };
-    return makeDefaultRange(14);
-  }, [startDate, endDate]);
-
+  const { start, end } = useDateRange(startDate, endDate);
   const [data, setData] = useState<StanceAreaWire['data']>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string|null>(null);
